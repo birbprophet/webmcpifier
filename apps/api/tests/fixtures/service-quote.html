@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Northstar Home Services</title>
+  </head>
+  <body>
+    <main>
+      <form id="quote-form" aria-label="Request a service quote">
+        <label for="full-name">Full name</label>
+        <input id="full-name" name="full_name" value="private fixture person" required />
+
+        <label>
+          Email address
+          <input name="email" type="email" value="private@example.test" required />
+        </label>
+
+        <label for="service">Service</label>
+        <select id="service" name="service" required>
+          <option value="plumbing">Plumbing</option>
+          <option value="electrical">Electrical</option>
+          <option disabled value="retired">Retired service</option>
+        </select>
+
+        <fieldset>
+          <legend>Urgency</legend>
+          <label><input type="radio" name="urgency" value="routine" required /> Routine</label>
+          <label><input type="radio" name="urgency" value="urgent" /> Urgent</label>
+        </fieldset>
+
+        <label for="details">Project details</label>
+        <textarea id="details" name="details">private fixture details</textarea>
+
+        <input type="hidden" name="csrf" value="private fixture token" />
+        <input type="password" name="account_password" value="private fixture password" />
+        <input type="text" name="disabled_field" value="private fixture disabled" disabled />
+        <button type="submit">Submit request</button>
+      </form>
+    </main>
+  </body>
+</html>

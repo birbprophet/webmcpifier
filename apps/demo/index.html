@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Request trusted home repairs from Northstar Home Services." />
+    <title>Northstar Home Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Northstar Home Services home">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>Northstar <small>Home Services</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#services">Services</a>
+        <a href="#why-northstar">Why Northstar</a>
+        <a class="nav-cta" href="#quote-form">Request a visit</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Local experts · Thoughtful service</p>
+          <h1 id="hero-title">The calm way to get your home fixed.</h1>
+          <p class="hero-intro">
+            Tell us what needs attention. We’ll match you with a vetted local professional and
+            confirm the plan before any work begins.
+          </p>
+          <a class="primary-cta" href="#quote-form">Start your request <span>→</span></a>
+          <ul class="trust-list" aria-label="Service assurances">
+            <li>Background-checked pros</li>
+            <li>Clear arrival windows</li>
+            <li>Workmanship guaranteed</li>
+          </ul>
+        </div>
+        <aside class="service-card" id="services" aria-label="Popular home services">
+          <p class="card-kicker">Here when home happens</p>
+          <h2>One trusted team for every room.</h2>
+          <ul>
+            <li><span aria-hidden="true">01</span> Plumbing &amp; leaks</li>
+            <li><span aria-hidden="true">02</span> Electrical repairs</li>
+            <li><span aria-hidden="true">03</span> Heating &amp; cooling</li>
+            <li><span aria-hidden="true">04</span> Everyday handyman help</li>
+          </ul>
+          <p class="availability"><i aria-hidden="true"></i> Same-week appointments available</p>
+        </aside>
+      </section>
+
+      <section class="proof-strip" id="why-northstar" aria-label="Northstar service record">
+        <p><strong>4.9</strong><span>average rating</span></p>
+        <p><strong>12k+</strong><span>homes helped</span></p>
+        <p><strong>8 yrs</strong><span>serving locally</span></p>
+        <p><strong>100%</strong><span>insured professionals</span></p>
+      </section>
+
+      <section class="request-layout" aria-labelledby="review-request-title">
+        <div class="request-intro">
+          <p class="eyebrow">A better first step</p>
+          <h2 id="review-request-title">Review your service request</h2>
+          <p>
+            Share a few details and we’ll follow up with the right specialist. An assistant can
+            prepare this form, but only you can review and send it.
+          </p>
+          <div class="human-checkpoint">
+            <span aria-hidden="true">✓</span>
+            <p>
+              <strong>You stay in control.</strong> Nothing is booked or submitted automatically.
+            </p>
+          </div>
+        </div>
+
+        <form
+          id="quote-form"
+          class="request-form"
+          action="/request-received"
+          method="post"
+          aria-labelledby="review-request-title"
+          tabindex="-1"
+        >
+          <fieldset>
+            <legend>What can we help with?</legend>
+            <div class="field-grid three-columns">
+              <label for="service">
+                Service
+                <select id="service" name="service" required>
+                  <option value="">Choose a service</option>
+                  <option value="plumbing">Plumbing</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="heating">Heating</option>
+                </select>
+              </label>
+              <label for="urgency">
+                Timing
+                <select id="urgency" name="urgency" required>
+                  <option value="">Choose timing</option>
+                  <option value="standard">Standard</option>
+                  <option value="soon">Soon</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </label>
+              <label for="propertyType">
+                Property type
+                <select id="propertyType" name="propertyType" required>
+                  <option value="">Choose a property</option>
+                  <option value="house">House</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="condo">Condo</option>
+                  <option value="townhouse">Townhouse</option>
+                  <option value="commercial">Small business</option>
+                </select>
+              </label>
+            </div>
+
+            <label for="postcode">
+              Postcode
+              <input
+                id="postcode"
+                name="postcode"
+                type="text"
+                autocomplete="postal-code"
+                inputmode="text"
+                maxlength="10"
+                pattern="[A-Za-z0-9 -]{3,10}"
+                placeholder="e.g. 94107"
+                required
+              />
+            </label>
+
+            <label for="details">
+              What’s happening?
+              <textarea
+                id="details"
+                name="details"
+                rows="5"
+                maxlength="1200"
+                placeholder="Describe the issue, where it is, and anything we should know."
+                required
+              ></textarea>
+              <small>Helpful details make the first visit smoother.</small>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Where should we follow up?</legend>
+            <div class="field-grid two-columns">
+              <label for="name">
+                Your name
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autocomplete="name"
+                  maxlength="120"
+                  required
+                />
+              </label>
+              <label for="email">
+                Email
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  maxlength="254"
+                  required
+                />
+              </label>
+            </div>
+          </fieldset>
+
+          <footer class="form-footer">
+            <p>By sending, you agree that Northstar may contact you about this request.</p>
+            <button id="review-request" type="button" data-webmcpifier-review>
+              Review request <span aria-hidden="true">→</span>
+            </button>
+          </footer>
+        </form>
+      </section>
+    </main>
+
+    <dialog id="review-dialog" aria-labelledby="review-dialog-title">
+      <div class="review-dialog-content">
+        <p class="eyebrow">Human checkpoint</p>
+        <h2 id="review-dialog-title">Ready for your final review</h2>
+        <p>Check the prepared values in the form. Nothing has been sent.</p>
+        <div class="dialog-actions">
+          <button id="return-to-form" type="button">Return to form</button>
+          <button type="submit" form="quote-form">Send request</button>
+        </div>
+      </div>
+    </dialog>
+
+    <footer class="site-footer">
+      <p><strong>Northstar Home Services</strong> · Reliable help, close to home.</p>
+      <p>Mon–Sat, 7am–7pm · (415) 555-0148</p>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

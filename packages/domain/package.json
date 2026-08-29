@@ -1,0 +1,21 @@
+{
+  "name": "@webmcpifier/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "vp check",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "effect": "4.0.0-rc.112"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.0-rc.112",
+    "typescript": "7.0.2",
+    "vite-plus": "0.3.0"
+  }
+}

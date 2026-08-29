@@ -1,0 +1,28 @@
+{
+  "name": "@webmcpifier/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/worker-impl.ts",
+    "./environment": "./src/environment.ts",
+    "./proof-durable-object": "./src/proof-durable-object.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "scripts": {
+    "build": "vp check",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@webmcpifier/domain": "workspace:*",
+    "alchemy": "2.0.0-beta.74",
+    "effect": "4.0.0-rc.112",
+    "parse5": "8.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260826.1",
+    "@effect/vitest": "4.0.0-rc.112",
+    "typescript": "7.0.2",
+    "vite-plus": "0.3.0"
+  }
+}
