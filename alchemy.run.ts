@@ -55,9 +55,13 @@ export default Stack(
           flags: ["nodejs_compat"],
         },
         env: {
+          API_ORIGIN: deploy.WEBMCPIFIER_API_ORIGIN,
           BROWSER: Cloudflare.Browser("BROWSER").pipe(remote()),
           [PROOF_BINDING]: proof,
+          RELEASE_COMMIT: deploy.WEBMCPIFIER_RELEASE_COMMIT,
           RUNTIME_INTEGRITY: verifiedRuntimeIntegrity,
+          STUDIO_ORIGIN: deploy.WEBMCPIFIER_STUDIO_ORIGIN,
+          WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: deploy.WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN,
         },
         main: "./apps/api/src/worker.ts",
         ...(production

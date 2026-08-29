@@ -6,6 +6,12 @@ import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import { ApiInitialization, decodeApiEnvironment } from "../src/environment.ts";
 import { apiWorkerImpl } from "../src/worker-impl.ts";
 
+type WorkerEntry = typeof import("../src/worker.ts");
+type Assert<T extends true> = T;
+type WorkerEntryHasDefault = Assert<WorkerEntry extends { default: unknown } ? true : false>;
+
+const workerEntryHasDefault: WorkerEntryHasDefault = true;
+
 const validBindings = {
   API_ORIGIN: "https://api.webmcpifier.com",
   RELEASE_COMMIT: "0123456789abcdef0123456789abcdef01234567",
@@ -15,6 +21,10 @@ const validBindings = {
 };
 
 const load = (bindings: unknown) => Schema.decodeUnknownEffect(ApiInitialization)(bindings);
+
+it("retains the default export required by Alchemy's Worker bridge", () => {
+  expect(workerEntryHasDefault).toBe(true);
+});
 
 it.effect("requires and Schema-decodes every API string binding at initialization", () =>
   Effect.gen(function* () {
