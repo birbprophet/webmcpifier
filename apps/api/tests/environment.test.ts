@@ -45,7 +45,7 @@ it.effect("rejects a non-canonical Studio origin", () =>
 
 it.effect("requires both native Worker bindings", () =>
   Effect.gen(function* () {
-    const browser = { quickAction: () => Promise.resolve(new Response()) };
+    const browser = { snapshot: () => Effect.die("not used") };
     const proof = { getByName: () => ({}) };
     const decoded = yield* decodeApiEnvironment({
       ...validBindings,
@@ -67,7 +67,7 @@ it.effect("runs the direct Alchemy HttpEffect with its decoded environment", () 
     const worker = makeApiWorker(
       yield* decodeApiEnvironment({
         ...validBindings,
-        BROWSER: { quickAction: () => Promise.resolve(new Response()) },
+        BROWSER: { snapshot: () => Effect.die("not used") },
         PROOF: { getByName: () => ({}) },
       }),
     );

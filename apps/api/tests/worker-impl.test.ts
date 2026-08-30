@@ -17,7 +17,7 @@ const event = {
 const makeHandler = (recorded: Array<unknown>) =>
   createApiHandler({
     API_ORIGIN: "https://api.webmcpifier.com",
-    BROWSER: { quickAction: () => Promise.resolve(new Response()) },
+    BROWSER: { snapshot: () => Effect.die("not used") },
     PROOF: {
       getByName: () => ({
         record: (input: unknown) => {

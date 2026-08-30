@@ -4,23 +4,19 @@ import {
   ReleaseCommit,
   SubresourceIntegrity,
 } from "@webmcpifier/domain";
+import type { BrowserClient } from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type { CapabilityProofNamespace } from "./proof-durable-object.ts";
 import { InvalidEnvironment } from "./errors.ts";
 
-export interface BrowserSnapshotBinding {
-  readonly quickAction: (
-    action: "snapshot",
-    options: BrowserRunSnapshotOptions,
-  ) => Promise<Response>;
-}
+export type BrowserSnapshotBinding = Pick<BrowserClient, "snapshot">;
 
 const hasMethod = (value: unknown, name: PropertyKey): value is object =>
   typeof value === "object" && value !== null && typeof Reflect.get(value, name) === "function";
 
 const BrowserBindingSchema = Schema.declare<BrowserSnapshotBinding>(
-  (value): value is BrowserSnapshotBinding => hasMethod(value, "quickAction"),
+  (value): value is BrowserSnapshotBinding => hasMethod(value, "snapshot"),
   { identifier: "webmcpifier/BrowserSnapshotBinding" },
 );
 

@@ -7,6 +7,7 @@ import {
   ScanResult,
   type ScanRequest,
 } from "@webmcpifier/domain";
+import type { RuntimeContext } from "alchemy/RuntimeContext";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import type { BrowserSnapshotBinding } from "./environment.ts";
@@ -43,7 +44,9 @@ const BrowserSnapshot = Schema.Struct({
 });
 
 export interface SiteScanner {
-  readonly inspect: (request: ScanRequest) => Effect.Effect<ScanResult, ScanFailed | InvalidTarget>;
+  readonly inspect: (
+    request: ScanRequest,
+  ) => Effect.Effect<ScanResult, ScanFailed | InvalidTarget, RuntimeContext>;
 }
 
 const scanFailure = (): ScanFailed =>
@@ -63,29 +66,23 @@ export const browserSiteScanner = (
       const requested = yield* parsePublicTarget(request.url);
       const requestedUrl = `${requested.origin}${requested.pathname}`;
       yield* resolver.assertPublic(new URL(requested.origin).hostname);
-      const response = yield* Effect.tryPromise({
-        try: () =>
-          browser.quickAction("snapshot", {
-            actionTimeout: SCAN_ACTION_TIMEOUT_MILLISECONDS,
-            cacheTTL: SCAN_CACHE_TTL_SECONDS,
-            formats: ["content", "screenshot"],
-            screenshotOptions: {
-              fullPage: false,
-              type: "jpeg",
-            },
-            url: requestedUrl,
-          }),
-        catch: scanFailure,
-      });
-      if (!response.ok) return yield* scanFailure();
-      const payload = yield* Effect.tryPromise({
-        try: () => response.json(),
-        catch: scanFailure,
-      }).pipe(
-        Effect.flatMap((input) =>
-          Schema.decodeUnknownEffect(BrowserSnapshot)(input).pipe(Effect.mapError(scanFailure)),
-        ),
-      );
+      const payload = yield* browser
+        .snapshot({
+          actionTimeout: SCAN_ACTION_TIMEOUT_MILLISECONDS,
+          cacheTTL: SCAN_CACHE_TTL_SECONDS,
+          formats: ["content", "screenshot"],
+          screenshotOptions: {
+            fullPage: false,
+            type: "jpeg",
+          },
+          url: requestedUrl,
+        })
+        .pipe(
+          Effect.mapError(scanFailure),
+          Effect.flatMap((input) =>
+            Schema.decodeUnknownEffect(BrowserSnapshot)(input).pipe(Effect.mapError(scanFailure)),
+          ),
+        );
       if (
         payload.meta.status < 200 ||
         payload.meta.status >= 400 ||

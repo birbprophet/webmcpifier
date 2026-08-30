@@ -1,4 +1,5 @@
 import { expect, it } from "@effect/vitest";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import * as Effect from "effect/Effect";
 import fixture from "./fixtures/service-quote.html?raw";
 import { browserSiteScanner } from "../src/scanner.ts";
@@ -10,40 +11,42 @@ it.effect("extracts deterministic semantic form metadata from rendered Browser R
   Effect.gen(function* () {
     const requestedUrls: Array<string> = [];
     const browser: BrowserSnapshotBinding = {
-      quickAction: (_action, options) => {
+      snapshot: (options) => {
         if ("url" in options) requestedUrls.push(options.url);
-        return Promise.resolve(
-          Response.json({
-            meta: {
-              finalUrl: "https://customer.example/quote?server-trace=private",
-              headers: { "content-type": "text/html; charset=utf-8" },
-              redirectChain: [
-                {
-                  headers: { location: "/quote?server-trace=private" },
-                  status: 302,
-                  url: "https://customer.example/quote",
-                },
-              ],
-              status: 200,
-              title: "Northstar Home Services",
-            },
-            result: { content: fixture, screenshot: "AA==" },
-            success: true,
-          }),
-        );
+        return Effect.succeed({
+          meta: {
+            finalUrl: "https://customer.example/quote?server-trace=private",
+            headers: { "content-type": "text/html; charset=utf-8" },
+            redirectChain: [
+              {
+                headers: { location: "/quote?server-trace=private" },
+                status: 302,
+                url: "https://customer.example/quote",
+              },
+            ],
+            status: 200,
+            title: "Northstar Home Services",
+          },
+          result: { content: fixture, screenshot: "AA==" },
+          success: true as const,
+        });
       },
     };
     const scanner = browserSiteScanner(browser, publicDns);
-    const first = yield* scanner.inspect({
-      safetyBoundary: "fill_for_review",
-      task: "Prepare a quote for review.",
-      url: "https://customer.example/quote?campaign=private",
-    });
-    const second = yield* scanner.inspect({
-      safetyBoundary: "fill_for_review",
-      task: "Prepare a quote for review.",
-      url: "https://customer.example/quote?campaign=other",
-    });
+    const first = yield* scanner
+      .inspect({
+        safetyBoundary: "fill_for_review",
+        task: "Prepare a quote for review.",
+        url: "https://customer.example/quote?campaign=private",
+      })
+      .pipe(Effect.provide(RuntimeContext.phantom));
+    const second = yield* scanner
+      .inspect({
+        safetyBoundary: "fill_for_review",
+        task: "Prepare a quote for review.",
+        url: "https://customer.example/quote?campaign=other",
+      })
+      .pipe(Effect.provide(RuntimeContext.phantom));
 
     expect(requestedUrls).toEqual([
       "https://customer.example/quote",
@@ -84,26 +87,26 @@ it.effect("extracts deterministic semantic form metadata from rendered Browser R
 it.effect("rejects unsupported origin content before exposing inventory", () =>
   Effect.gen(function* () {
     const browser: BrowserSnapshotBinding = {
-      quickAction: () =>
-        Promise.resolve(
-          Response.json({
-            meta: {
-              finalUrl: "https://customer.example/quote",
-              headers: { "content-type": "application/pdf" },
-              status: 200,
-              title: "Not HTML",
-            },
-            result: { content: fixture, screenshot: "AA==" },
-            success: true,
-          }),
-        ),
+      snapshot: () =>
+        Effect.succeed({
+          meta: {
+            finalUrl: "https://customer.example/quote",
+            headers: { "content-type": "application/pdf" },
+            status: 200,
+            title: "Not HTML",
+          },
+          result: { content: fixture, screenshot: "AA==" },
+          success: true as const,
+        }),
     };
     const result = yield* Effect.exit(
-      browserSiteScanner(browser, publicDns).inspect({
-        safetyBoundary: "fill_for_review",
-        task: "Prepare a quote for review.",
-        url: "https://customer.example/quote",
-      }),
+      browserSiteScanner(browser, publicDns)
+        .inspect({
+          safetyBoundary: "fill_for_review",
+          task: "Prepare a quote for review.",
+          url: "https://customer.example/quote",
+        })
+        .pipe(Effect.provide(RuntimeContext.phantom)),
     );
     expect(result._tag).toBe("Failure");
   }),
