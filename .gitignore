@@ -20,6 +20,7 @@ apps/studio/public/runtime/
 .env
 .env.*
 !.env.example
+!apps/studio/.env.test
 
 # Editor directories and files
 .vscode/*

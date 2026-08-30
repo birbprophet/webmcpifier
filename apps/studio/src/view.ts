@@ -5,7 +5,16 @@ import type {
   ScanResult,
   SemanticForm,
 } from "@webmcpifier/domain";
+import { alert as untitledAlert } from "@birbprophet/untitled-ui-foldkit/application/alerts.ts";
+import { codeSnippet as untitledCodeSnippet } from "@birbprophet/untitled-ui-foldkit/application/code-snippet.ts";
+import { metrics as untitledMetric } from "@birbprophet/untitled-ui-foldkit/application/metrics.ts";
+import { progressSteps as untitledProgressSteps } from "@birbprophet/untitled-ui-foldkit/application/progress-steps.ts";
+import { badge as untitledBadge } from "@birbprophet/untitled-ui-foldkit/base/badges.ts";
 import { button as untitledButton } from "@birbprophet/untitled-ui-foldkit/base/button.ts";
+import {
+  input as untitledInput,
+  textarea as untitledTextarea,
+} from "@birbprophet/untitled-ui-foldkit/base/fields.ts";
 import * as Option from "effect/Option";
 import type { Document, Html, HtmlBuilder } from "foldkit/html";
 import { Message, type Model, SAFETY_GUARANTEE, type StudioState } from "./main.ts";
@@ -26,7 +35,6 @@ const actionButton = (
 ): Html =>
   untitledButton(
     {
-      className: `button button-${options.kind ?? "primary"}`,
       color:
         options.kind === "secondary"
           ? "secondary"
@@ -38,6 +46,7 @@ const actionButton = (
       label: options.pending === true ? `${label}…` : label,
       onPress: message,
       showTextWhileLoading: true,
+      size: "md",
       type: "button",
     },
     h,
@@ -54,19 +63,18 @@ const field = (
     readonly type?: "text" | "url";
   } = {},
 ): Html =>
-  h.div(
-    [h.Class("field")],
-    [
-      h.label([h.For(id)], [label]),
-      h.input([
-        h.Autocomplete("off"),
-        h.Id(id),
-        h.OnInput(onInput),
-        h.Type(options.type ?? "text"),
-        h.Value(value),
-      ]),
-      ...(options.hint === undefined ? [] : [h.p([h.Class("field-hint")], [options.hint])]),
-    ],
+  untitledInput(
+    {
+      autocomplete: "off",
+      hint: options.hint,
+      label,
+      name: id,
+      onInput,
+      size: "lg",
+      type: options.type ?? "text",
+      value,
+    },
+    h,
   );
 
 const textAreaField = (
@@ -77,12 +85,39 @@ const textAreaField = (
   h: HtmlBuilder<Message>,
   hint?: string,
 ): Html =>
-  h.div(
-    [h.Class("field")],
+  untitledTextarea(
+    {
+      hint,
+      label,
+      name: id,
+      onInput,
+      rows: 4,
+      value,
+    },
+    h,
+  );
+
+const chip = (
+  label: string,
+  color: "blue" | "brand" | "gray" | "success",
+  h: HtmlBuilder<Message>,
+): Html => untitledBadge({ color, label, size: "sm", type: "pill-color" }, h);
+
+const introPoint = (title: string, description: string, h: HtmlBuilder<Message>): Html =>
+  h.li(
+    [],
     [
-      h.label([h.For(id)], [label]),
-      h.textarea([h.Id(id), h.OnInput(onInput), h.Rows(4), h.Value(value)]),
-      ...(hint === undefined ? [] : [h.p([h.Class("field-hint")], [hint])]),
+      untitledBadge(
+        {
+          adornment: "icon-only",
+          color: "brand",
+          label: `${title} included`,
+          size: "md",
+          type: "pill-color",
+        },
+        h,
+      ),
+      h.div([h.Class("intro-point-copy")], [h.strong([], [title]), h.span([], [description])]),
     ],
   );
 
@@ -92,46 +127,79 @@ const pageHeader = (h: HtmlBuilder<Message>): Html =>
     [
       h.div(
         [h.Class("brand-lockup")],
-        [h.span([h.Class("brand-mark"), h.AriaHidden(true)], ["W"]), h.span([], ["WebMCPifier"])],
+        [
+          h.span(
+            [h.Class("brand-mark"), h.AriaHidden(true)],
+            [
+              h.svg(
+                [h.Fill("none"), h.ViewBox("0 0 24 24")],
+                [
+                  h.path([
+                    h.D("m5 8 3.2 8L12 9l3.8 7L19 8"),
+                    h.Stroke("currentColor"),
+                    h.StrokeLinecap("round"),
+                    h.StrokeLinejoin("round"),
+                    h.StrokeWidth("2.4"),
+                  ]),
+                ],
+              ),
+            ],
+          ),
+          h.div([], [h.strong([], ["WebMCPifier"]), h.span([], ["Capability Studio"])]),
+        ],
       ),
-      h.p([], ["A calm path from visible form to approved browser capability."]),
+      h.div(
+        [h.Class("header-status")],
+        [chip("WebMCP native", "success", h), chip("v1 · one form", "gray", h)],
+      ),
     ],
   );
 
 const progress = (state: StudioState, h: HtmlBuilder<Message>): Html => {
   const current = stateStep(state);
   return h.nav(
-    [h.Class("progress"), h.AriaLabel("Studio progress")],
-    STUDIO_STEPS.map((step, index) =>
-      h.keyed("div")(
-        step,
-        [
-          h.Class(
-            `progress-step ${index === current ? "current" : ""} ${index < current ? "complete" : ""}`,
-          ),
-          ...(index === current ? [h.AriaCurrent("step")] : []),
-        ],
-        [
-          h.span([h.Class("progress-index"), h.AriaHidden(true)], [String(index + 1)]),
-          h.span([], [step]),
-        ],
+    [h.Class("progress-shell"), h.AriaLabel("Studio progress")],
+    [
+      untitledProgressSteps(
+        {
+          connector: true,
+          items: STUDIO_STEPS.map((step, index) => ({
+            description:
+              index === 0
+                ? "See the page"
+                : index === 1
+                  ? "Shape the tool"
+                  : index === 2
+                    ? "Human gate"
+                    : index === 3
+                      ? "Add one tag"
+                      : "Check usage",
+            status: index < current ? "complete" : index === current ? "current" : "incomplete",
+            title: step,
+          })),
+          orientation: "horizontal",
+          size: "sm",
+          type: "icon",
+          variant: "icons-with-text",
+        },
+        h,
       ),
-    ),
+    ],
   );
 };
 
 const safetyCard = (h: HtmlBuilder<Message>): Html =>
   h.aside(
-    [h.Class("safety-card")],
+    [h.Class("safety-boundary")],
     [
-      h.span([h.Class("safety-icon"), h.AriaHidden(true)], ["✓"]),
-      h.div(
-        [],
-        [
-          h.h3([], ["Safety guarantee"]),
-          h.p([], [SAFETY_GUARANTEE]),
-          h.p([h.Class("muted")], ["No click macros, form submission, or arbitrary JavaScript."]),
-        ],
+      untitledAlert(
+        {
+          color: "success",
+          confirmLabel: "",
+          description: `${SAFETY_GUARANTEE} No click macros, form submission, or arbitrary JavaScript.`,
+          title: "Fill for review. Never submit.",
+        },
+        h,
       ),
     ],
   );
@@ -142,7 +210,17 @@ const errorBanner = (state: StudioState, h: HtmlBuilder<Message>): readonly Html
     onSome: (error) => [
       h.div(
         [h.Class("error-banner"), h.Role("alert")],
-        [h.strong([], ["Needs attention"]), h.span([], [error])],
+        [
+          untitledAlert(
+            {
+              color: "error",
+              confirmLabel: "",
+              description: error,
+              title: "Needs attention",
+            },
+            h,
+          ),
+        ],
       ),
     ],
   });
@@ -172,7 +250,7 @@ const targetSummary = (
     [h.Class("target-summary")],
     [
       h.div([], [h.p([h.Class("eyebrow")], ["Target"]), h.h3([], [title]), h.code([], [url])]),
-      h.span([h.Class("path-chip")], [pathname]),
+      chip(`Path ${pathname}`, "gray", h),
     ],
   );
 
@@ -183,7 +261,7 @@ const controlInventory = (form: SemanticForm, h: HtmlBuilder<Message>): readonly
       [h.Class("control-row")],
       [
         h.div([], [h.strong([], [control.label]), h.code([], [control.name])]),
-        h.span([h.Class("kind-chip")], [control.kind]),
+        chip(control.kind, "blue", h),
         h.span([h.Class("muted")], [control.required ? "Required" : "Optional"]),
       ],
     ),
@@ -201,7 +279,7 @@ const formInventory = (scan: ScanResult, h: HtmlBuilder<Message>): Html =>
             [h.Class("form-card-heading")],
             [
               h.div([], [h.h3([], [form.title]), h.code([], [form.formId])]),
-              h.span([h.Class("count-chip")], [`${String(form.controls.length)} fields`]),
+              chip(`${String(form.controls.length)} fields`, "gray", h),
             ],
           ),
           h.ul([h.Class("control-list")], controlInventory(form, h)),
@@ -210,11 +288,17 @@ const formInventory = (scan: ScanResult, h: HtmlBuilder<Message>): Html =>
     ),
   );
 
-const scanEvidence = (scan: ScanResult, h: HtmlBuilder<Message>): Html =>
+const scanEvidence = (
+  scan: ScanResult,
+  h: HtmlBuilder<Message>,
+  options: { readonly includeTarget?: boolean } = {},
+): Html =>
   h.div(
     [h.Class("evidence-stack")],
     [
-      targetSummary(scan.title, scan.url, scan.pathname, h),
+      ...(options.includeTarget === false
+        ? []
+        : [targetSummary(scan.title, scan.url, scan.pathname, h)]),
       h.figure(
         [h.Class("screenshot-card")],
         [
@@ -234,8 +318,30 @@ const inspectView = (
   h: HtmlBuilder<Message>,
 ): Html =>
   h.div(
-    [h.Class("single-column")],
+    [h.Class("inspect-layout")],
     [
+      h.section(
+        [h.Class("studio-intro")],
+        [
+          chip("Safe WebMCP compiler", "brand", h),
+          h.h1([], ["Turn one website form into a browser tool."]),
+          h.p(
+            [h.Class("intro-lede")],
+            [
+              "Describe the task to your browser agent. Review the exact contract. Add one generated tag. Prove the tool works.",
+            ],
+          ),
+          h.ul(
+            [h.Class("intro-points")],
+            [
+              introPoint("Semantic only", "Stable forms and labeled controls", h),
+              introPoint("Human approved", "Nothing is published before your click", h),
+              introPoint("Privacy light", "Proof without captured form values", h),
+            ],
+          ),
+          h.p([h.Class("intro-thesis")], ["Describe it. Approve it. Paste it. Prove it."]),
+        ],
+      ),
       h.section(
         [h.Class("panel hero-panel")],
         [
@@ -276,7 +382,7 @@ const inspectView = (
           ),
         ],
       ),
-      safetyCard(h),
+      h.div([h.Class("inspect-safety")], [safetyCard(h)]),
     ],
   );
 
@@ -317,7 +423,7 @@ const parameterEditor = (
         [h.Class("parameter-heading")],
         [
           h.div([], [h.code([], [parameter.name]), h.span([], [` → ${parameter.controlName}`])]),
-          h.span([h.Class("kind-chip")], [parameter.kind]),
+          chip(parameter.kind, "blue", h),
         ],
       ),
       field(
@@ -327,13 +433,14 @@ const parameterEditor = (
         (value) => Message.ChangedParameterTitle({ controlName: parameter.controlName, value }),
         h,
       ),
-      textAreaField(
+      field(
         `parameter-description-${parameter.controlName}`,
         "Agent-facing description",
         parameter.description,
         (value) =>
           Message.ChangedParameterDescription({ controlName: parameter.controlName, value }),
         h,
+        { hint: "Keep it short and specific." },
       ),
     ],
   );
@@ -424,7 +531,7 @@ const contractSummary = (draft: DraftCapability, h: HtmlBuilder<Message>): Html 
           h.keyed("dt")(
             `${parameter.name}-term`,
             [],
-            [h.code([], [parameter.name]), h.span([h.Class("kind-chip")], [parameter.kind])],
+            [h.code([], [parameter.name]), chip(parameter.kind, "blue", h)],
           ),
           h.keyed("dd")(
             `${parameter.name}-description`,
@@ -452,6 +559,7 @@ const approveView = (
             "Check the target, contract, bindings, and safety guarantee. No tag or installation skill exists yet.",
             h,
           ),
+          targetSummary(state.scan.title, state.scan.url, state.scan.pathname, h),
           contractSummary(state.draft, h),
           safetyCard(h),
           h.div(
@@ -478,7 +586,7 @@ const approveView = (
           ),
         ],
       ),
-      h.aside([h.Class("evidence-panel")], [scanEvidence(state.scan, h)]),
+      h.aside([h.Class("evidence-panel")], [scanEvidence(state.scan, h, { includeTarget: false })]),
     ],
   );
 
@@ -490,22 +598,36 @@ const codeReceipt = (
   copy?: { readonly copied: boolean; readonly message: Message },
 ): Html =>
   h.section(
-    [h.Class("receipt-card")],
+    [h.Class("receipt-card code-receipt")],
     [
       h.div(
         [h.Class("receipt-heading")],
         [
           h.h3([], [label]),
-          ...(copy === undefined
-            ? []
-            : [
-                actionButton(copy.copied ? "Copied" : "Copy", copy.message, h, {
-                  kind: "quiet",
-                }),
-              ]),
+          chip(
+            copy?.copied === true ? "Copied" : "Ready",
+            copy?.copied === true ? "success" : "gray",
+            h,
+          ),
         ],
       ),
-      h.pre([h.Class(className)], [h.code([], [content])]),
+      h.div(
+        [h.Class(`code-surface ${className}`)],
+        [
+          untitledCodeSnippet(
+            {
+              code: content,
+              copied: copy?.copied,
+              language: className.includes("tag-block") ? "html" : "markdown",
+              maxHeight: className.includes("tag-block") ? 180 : 420,
+              onCopy: copy?.message,
+              showLineNumbers: false,
+              variant: "modern",
+            },
+            h,
+          ),
+        ],
+      ),
     ],
   );
 
@@ -574,9 +696,14 @@ const installView = (
 };
 
 const metric = (label: string, value: number | string, h: HtmlBuilder<Message>): Html =>
-  h.div(
-    [h.Class("metric")],
-    [h.span([h.Class("metric-value")], [String(value)]), h.span([h.Class("muted")], [label])],
+  untitledMetric(
+    {
+      showActions: false,
+      subtitle: label,
+      title: String(value),
+      variant: "simple",
+    },
+    h,
   );
 
 const proofDetails = (proof: ProofSummary, h: HtmlBuilder<Message>): Html => {
@@ -680,8 +807,8 @@ const proveView = (
                 ],
               ),
               h.span(
-                [h.Class("status-chip")],
-                [state.status === "loading" ? "Refreshing" : "Live"],
+                [h.Class("receipt-live")],
+                [chip(state.status === "loading" ? "Refreshing" : "Live", "success", h)],
               ),
             ],
           ),

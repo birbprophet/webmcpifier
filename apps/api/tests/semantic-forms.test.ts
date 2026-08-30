@@ -70,3 +70,41 @@ it.effect("keeps third-party instructions only as inventory text", () =>
     expect(result[0]?.controls[0]?.name).toBe("details");
   }),
 );
+
+it.effect("keeps descendant controls, options, and helper copy out of labels", () =>
+  Effect.gen(function* () {
+    const result = yield* extractSemanticForms(`
+      <form id="quote">
+        <label for="service">
+          Service
+          <select id="service" name="service" required>
+            <option value="">Choose a service</option>
+            <option value="plumbing">Plumbing</option>
+          </select>
+        </label>
+        <label for="details">
+          What is happening?
+          <textarea id="details" name="details"></textarea>
+          <small>Helpful details make the first visit smoother.</small>
+        </label>
+      </form>
+    `);
+
+    expect(result[0]?.controls).toEqual([
+      {
+        kind: "select",
+        label: "Service",
+        name: "service",
+        options: ["plumbing"],
+        required: true,
+      },
+      {
+        kind: "textarea",
+        label: "What is happening?",
+        name: "details",
+        options: [],
+        required: false,
+      },
+    ]);
+  }),
+);

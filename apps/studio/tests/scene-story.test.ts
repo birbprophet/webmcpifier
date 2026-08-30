@@ -123,6 +123,48 @@ it("renders every Studio state as a FoldKit Scene", () => {
   }
 });
 
+it("renders the Studio shell through authenticated Untitled UI component anatomy", () => {
+  Scene.scene(
+    { update, view },
+    Scene.given(inspect),
+    Scene.tap((simulation) => {
+      const rendered = JSON.stringify(simulation.html);
+      expect(Scene.textContent(simulation.html)).toContain(
+        "Turn one website form into a browser tool.",
+      );
+      expect(Scene.textContent(simulation.html)).toContain(
+        "Describe it. Approve it. Paste it. Prove it.",
+      );
+      expect(Scene.textContent(simulation.html)).toContain("Fill for review. Never submit.");
+      expect(rendered).toContain("Semantic only included");
+      expect(rendered).toContain("bg-bg-brand-solid");
+      expect(rendered).toContain("ring-focus-ring");
+      expect(rendered).toContain("ring-border-primary");
+      expect(rendered).toContain('"rounded-xl":true');
+      expect(rendered).toContain('"border-border-primary":true');
+    }),
+  );
+});
+
+it("places the exact approval target before the contract and human action", () => {
+  Scene.scene(
+    { update, view },
+    Scene.given(approve),
+    Scene.tap((simulation) => {
+      const content = Scene.textContent(simulation.html);
+      const target = content.indexOf("Northstar Home Services");
+      const contract = content.indexOf("Prepare service quote");
+      const approval = content.indexOf("Approve capability");
+
+      expect(target).toBeGreaterThanOrEqual(0);
+      expect(contract).toBeGreaterThan(target);
+      expect(approval).toBeGreaterThan(contract);
+      expect(content.match(/Northstar Home Services/g)).toHaveLength(1);
+      expect(content).toContain("Path /quote");
+    }),
+  );
+});
+
 it("keeps publication behind the human-click Story command", () => {
   Story.story(
     update,

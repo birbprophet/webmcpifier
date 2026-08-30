@@ -1,4 +1,5 @@
 import { foldkit } from "@foldkit/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite-plus";
 import { studioTestEnvironment } from "./test-environment.ts";
 
@@ -13,7 +14,7 @@ export default defineConfig({
   optimizeDeps: {
     entries: ["src/entry.ts"],
   },
-  plugins: [foldkit()],
+  plugins: [tailwindcss(), foldkit()],
   run: {
     tasks: {
       build: {

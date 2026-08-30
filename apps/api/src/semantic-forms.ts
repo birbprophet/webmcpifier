@@ -44,6 +44,24 @@ const text = (node: Node): string => {
   return childNodes(node).map(text).join(" ").replaceAll(/\s+/gu, " ").trim();
 };
 
+const labelText = (node: Node): string => {
+  if (isTextNode(node)) return node.value;
+  if (
+    node.nodeName === "script" ||
+    node.nodeName === "style" ||
+    (isElement(node) &&
+      (node.tagName === "input" ||
+        node.tagName === "select" ||
+        node.tagName === "textarea" ||
+        node.tagName === "button" ||
+        node.tagName === "small" ||
+        attribute(node, "aria-hidden") === "true"))
+  ) {
+    return "";
+  }
+  return childNodes(node).map(labelText).join(" ").replaceAll(/\s+/gu, " ").trim();
+};
+
 const humanize = (value: string): string =>
   value
     .replaceAll(/[_:.-]+/gu, " ")
@@ -68,7 +86,7 @@ const controlLabel = (
   return (
     attribute(control, "aria-label")?.trim() ||
     (id === undefined ? undefined : labelsByTarget.get(id)) ||
-    (nearestLabel(control) === undefined ? undefined : text(nearestLabel(control)!))
+    (nearestLabel(control) === undefined ? undefined : labelText(nearestLabel(control)!))
   );
 };
 
@@ -124,7 +142,7 @@ const controlsFor = (form: Element): ReadonlyArray<SemanticControl> | undefined 
   const labelsByTarget = new Map(
     elements
       .filter((element) => element.tagName === "label" && attribute(element, "for") !== undefined)
-      .map((element) => [attribute(element, "for")!, text(element)] as const),
+      .map((element) => [attribute(element, "for")!, labelText(element)] as const),
   );
   const controls = new Map<string, SemanticControl>();
 

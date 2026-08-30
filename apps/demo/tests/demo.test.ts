@@ -13,16 +13,14 @@ const loadDemo = (): Window => {
   return window;
 };
 
-it("installs the approved runtime on one stable semantic service form", () => {
+it("starts the rehearsal with no runtime on one stable semantic service form", () => {
   const window = loadDemo();
   const { document } = window;
   const form = document.getElementById("quote-form");
 
   expect(document.title).toBe("Northstar Home Services");
   const runtime = document.querySelector("script[data-webmcpifier]");
-  expect(runtime?.getAttribute("src")).toBe("https://www.webmcpifier.com/runtime/v1.js");
-  expect(runtime?.getAttribute("integrity")).toMatch(/^sha384-/u);
-  expect(runtime?.getAttribute("crossorigin")).toBe("anonymous");
+  expect(runtime).toBeNull();
   expect(form?.tagName).toBe("FORM");
   expect(form?.getAttribute("aria-labelledby")).toBe("review-request-title");
   expect(form?.getAttribute("tabindex")).toBe("-1");

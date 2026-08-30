@@ -1,0 +1,14 @@
+:root {
+  --brand-50: #eff8ff;
+  --brand-100: #d1e9ff;
+  --brand-200: #b2ddff;
+  --brand-300: #84caff;
+  --brand-400: #53b1fd;
+  --brand-500: #2e90fa;
+  --brand-600: #1570ef;
+  --brand-700: #175cd3;
+  --brand-800: #1849a9;
+  --brand-900: #194185;
+  --brand-950: #102a56;
+  --font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
