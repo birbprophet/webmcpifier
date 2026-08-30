@@ -1,14 +1,35 @@
 import { InvalidTarget, NonBlankString } from "@webmcpifier/domain";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
-import { promises as dns } from "node:dns";
+import { NODATA, promises as dns } from "node:dns";
 
-const DnsRecord = Schema.Struct({
-  address: Schema.optional(Schema.String),
-  type: Schema.String,
+const DnsAddresses = Schema.Struct({
+  ipv4: Schema.Array(Schema.String),
+  ipv6: Schema.Array(Schema.String),
 });
 
 type ResolveHost = (hostname: string) => Promise<unknown>;
+
+const DnsError = Schema.Struct({ code: Schema.String });
+
+const resolveFamily = async (query: () => Promise<ReadonlyArray<string>>) => {
+  try {
+    return await query();
+  } catch (error) {
+    const decoded = Schema.decodeUnknownOption(DnsError)(error);
+    if (Option.isSome(decoded) && decoded.value.code === NODATA) return [];
+    throw error;
+  }
+};
+
+const resolveHost: ResolveHost = async (hostname) => {
+  const [ipv4, ipv6] = await Promise.all([
+    resolveFamily(() => dns.resolve4(hostname)),
+    resolveFamily(() => dns.resolve6(hostname)),
+  ]);
+  return { ipv4, ipv6 };
+};
 
 const resolutionFailed = (): InvalidTarget =>
   new InvalidTarget({ message: "The target hostname could not be resolved safely." });
@@ -59,7 +80,7 @@ export interface PublicHostResolver {
 }
 
 export const cloudflarePublicHostResolver = (
-  resolve: ResolveHost = (hostname) => dns.resolveAny(hostname),
+  resolve: ResolveHost = resolveHost,
 ): PublicHostResolver => ({
   assertPublic: (hostname) =>
     Effect.gen(function* () {
@@ -71,14 +92,10 @@ export const cloudflarePublicHostResolver = (
         try: () => resolve(name),
       }).pipe(
         Effect.flatMap((input) =>
-          Schema.decodeUnknownEffect(Schema.Array(DnsRecord))(input).pipe(
-            Effect.mapError(invalidResolution),
-          ),
+          Schema.decodeUnknownEffect(DnsAddresses)(input).pipe(Effect.mapError(invalidResolution)),
         ),
       );
-      const addresses = records.flatMap(({ address, type }) =>
-        address !== undefined && (type === "A" || type === "AAAA") ? [address] : [],
-      );
+      const addresses = [...records.ipv4, ...records.ipv6];
       if (addresses.length === 0 || addresses.some((address) => !isPublicAddress(address))) {
         return yield* deniedAddress();
       }

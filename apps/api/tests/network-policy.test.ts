@@ -25,12 +25,10 @@ it("classifies public addresses without admitting private or reserved ranges", (
 });
 
 const dnsResolve = (addresses: ReadonlyArray<string>) => () =>
-  Promise.resolve(
-    addresses.map((address) => ({
-      address,
-      type: address.includes(":") ? "AAAA" : "A",
-    })),
-  );
+  Promise.resolve({
+    ipv4: addresses.filter((address) => !address.includes(":")),
+    ipv6: addresses.filter((address) => address.includes(":")),
+  });
 
 it.effect("rejects a hostname when any public DNS answer targets a private network", () =>
   Effect.gen(function* () {
