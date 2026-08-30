@@ -2,6 +2,11 @@ import { assert, it } from "@effect/vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Result from "effect/Result";
+import {
+  FIRST_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+  THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+  webMcpOriginTrialTokenFixture,
+} from "../../../test/origin-trial-token.ts";
 import { DeploymentEnvironment } from "../src/environment.ts";
 
 const validEnvironment = {
@@ -10,8 +15,8 @@ const validEnvironment = {
   WEBMCPIFIER_RELEASE_COMMIT: "0123456789abcdef0123456789abcdef01234567",
   WEBMCPIFIER_RUNTIME_INTEGRITY: "sha384-dGVzdA==",
   WEBMCPIFIER_STUDIO_ORIGIN: "https://webmcpifier.com",
-  WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: "first-party-token",
-  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: "third-party-token",
+  WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: FIRST_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
 };
 
 it.effect("decodes every required deployment input", () =>
@@ -35,5 +40,38 @@ it.effect("fails when any deployment input is absent", () =>
       DeploymentEnvironment.parse(ConfigProvider.fromUnknown(missingToken)),
     );
     assert.isTrue(Result.isFailure(result));
+  }),
+);
+
+it.effect("rejects malformed, expired, and incorrectly scoped origin-trial tokens", () =>
+  Effect.gen(function* () {
+    const placeholder = yield* Effect.result(
+      DeploymentEnvironment.parse(
+        ConfigProvider.fromUnknown({
+          ...validEnvironment,
+          WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: "test-first-party-token",
+        }),
+      ),
+    );
+    const wrongScope = yield* Effect.result(
+      DeploymentEnvironment.parse(
+        ConfigProvider.fromUnknown({
+          ...validEnvironment,
+          WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: FIRST_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+        }),
+      ),
+    );
+    const expired = yield* Effect.result(
+      DeploymentEnvironment.parse(
+        ConfigProvider.fromUnknown({
+          ...validEnvironment,
+          WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: webMcpOriginTrialTokenFixture(false, 1),
+        }),
+      ),
+    );
+
+    assert.isTrue(Result.isFailure(placeholder));
+    assert.isTrue(Result.isFailure(wrongScope));
+    assert.isTrue(Result.isFailure(expired));
   }),
 );

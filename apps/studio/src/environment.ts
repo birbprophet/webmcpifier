@@ -1,10 +1,10 @@
-import { AbsoluteHttpsOrigin, NonBlankString } from "@webmcpifier/domain";
+import { AbsoluteHttpsOrigin, FirstPartyWebMcpOriginTrialToken } from "@webmcpifier/domain";
 import * as Schema from "effect/Schema";
 
 export const StudioEnvironment = Schema.Struct({
   VITE_API_ORIGIN: AbsoluteHttpsOrigin,
   VITE_DEMO_ORIGIN: AbsoluteHttpsOrigin,
-  VITE_WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: NonBlankString,
+  VITE_WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: FirstPartyWebMcpOriginTrialToken,
 });
 export type StudioEnvironment = typeof StudioEnvironment.Type;
 

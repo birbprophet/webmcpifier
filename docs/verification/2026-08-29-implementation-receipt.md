@@ -14,12 +14,13 @@ This receipt separates design intent from executed evidence. A checked item need
 | Fill-for-review runtime with zero submit side effects | Yes       | Yes            | Yes   | Yes      | Seven updates, review focus, valid review gate, unchanged URL, no submission       |
 | Aggregate proof receipt                               | Yes       | Yes            | Yes   | Yes      | Private UI and `get_proof_summary` both rendered the same `1/1` aggregate          |
 | Full authoring-to-installed public journey            | Yes       | Partial        | Yes   | Yes      | Partial: authoring stopped at the human gate; approved artifact and proof verified |
+| Origin-trial release-input validation                 | Yes       | Yes            | Yes   | No       | Placeholder, malformed, expired, and incorrectly scoped tokens block deployment    |
 
 ## Evidence ledger
 
 | Evidence                        | Result  | Artifact                                                                                                                                                     |
 | ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vp run ready`                  | Passed  | 87 files formatted; 56 source files linted/type-checked; 17 test files and 54 tests passed; all workspaces built                                             |
+| `vp run ready`                  | Passed  | 89 files formatted; 57 source files linted/type-checked; 17 test files and 55 tests passed; all workspaces built                                             |
 | Vite+/Vitest caching            | Passed  | Final gate reported 7/11 Vite+ task cache hits and replayed cached Vitest suites                                                                             |
 | Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                  |
 | Exact public release            | Passed  | API header reports `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`                                                                                                |

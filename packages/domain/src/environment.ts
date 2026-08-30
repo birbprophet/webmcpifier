@@ -1,7 +1,13 @@
 import * as Config from "effect/Config";
 import type * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { AbsoluteHttpsOrigin, NonBlankString, SubresourceIntegrity } from "./schema.ts";
+import {
+  AbsoluteHttpsOrigin,
+  FirstPartyWebMcpOriginTrialToken,
+  NonBlankString,
+  SubresourceIntegrity,
+  ThirdPartyWebMcpOriginTrialToken,
+} from "./schema.ts";
 
 export const ReleaseCommit = NonBlankString.check(
   Schema.makeFilter((value: string) => /^[0-9a-f]{40}$/u.test(value), {
@@ -20,11 +26,11 @@ export const DeploymentEnvironment = Config.all({
   ),
   WEBMCPIFIER_STUDIO_ORIGIN: Config.schema(AbsoluteHttpsOrigin, "WEBMCPIFIER_STUDIO_ORIGIN"),
   WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN: Config.schema(
-    NonBlankString,
+    FirstPartyWebMcpOriginTrialToken,
     "WEBMCP_FIRST_PARTY_ORIGIN_TRIAL_TOKEN",
   ),
   WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: Config.schema(
-    NonBlankString,
+    ThirdPartyWebMcpOriginTrialToken,
     "WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN",
   ),
 });

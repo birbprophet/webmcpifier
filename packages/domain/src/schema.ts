@@ -53,6 +53,83 @@ const absoluteHttpsOrigin = Schema.makeFilter(
 
 export const AbsoluteUrl = NonBlankString.check(absoluteUrl);
 export const AbsoluteHttpsOrigin = NonBlankString.check(absoluteHttpsOrigin);
+
+const ORIGIN_TRIAL_TOKEN_VERSION_BYTES = 1;
+const ORIGIN_TRIAL_TOKEN_SIGNATURE_BYTES = 64;
+const ORIGIN_TRIAL_TOKEN_PAYLOAD_LENGTH_BYTES = 4;
+const ORIGIN_TRIAL_TOKEN_PAYLOAD_LENGTH_OFFSET =
+  ORIGIN_TRIAL_TOKEN_VERSION_BYTES + ORIGIN_TRIAL_TOKEN_SIGNATURE_BYTES;
+const ORIGIN_TRIAL_TOKEN_PAYLOAD_OFFSET =
+  ORIGIN_TRIAL_TOKEN_PAYLOAD_LENGTH_OFFSET + ORIGIN_TRIAL_TOKEN_PAYLOAD_LENGTH_BYTES;
+const ORIGIN_TRIAL_TOKEN_VERSIONS = new Set([2, 3]);
+const MILLISECONDS_PER_SECOND = 1_000;
+const WEBMCP_ORIGIN_TRIAL_FEATURE = "WebMCP";
+
+const WebMcpOriginTrialPayload = Schema.Struct({
+  expiry: Schema.Int.check(Schema.isGreaterThan(0)),
+  feature: Schema.Literal(WEBMCP_ORIGIN_TRIAL_FEATURE),
+  isSubdomain: Schema.optional(Schema.Boolean),
+  isThirdParty: Schema.optional(Schema.Boolean),
+  origin: AbsoluteUrl.check(Schema.isStartsWith("https://")),
+  usage: Schema.optional(Schema.Literals(["", "subset"])),
+});
+const isWebMcpOriginTrialPayload = Schema.is(WebMcpOriginTrialPayload);
+
+const parseOriginTrialToken = (
+  value: string,
+):
+  | { readonly payload: typeof WebMcpOriginTrialPayload.Type; readonly version: number }
+  | undefined => {
+  try {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, (character) => character.codePointAt(0) ?? 0);
+    if (bytes.length <= ORIGIN_TRIAL_TOKEN_PAYLOAD_OFFSET) return undefined;
+    const version = bytes[0];
+    if (version === undefined || !ORIGIN_TRIAL_TOKEN_VERSIONS.has(version)) return undefined;
+    const payloadLength = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(
+      ORIGIN_TRIAL_TOKEN_PAYLOAD_LENGTH_OFFSET,
+    );
+    if (payloadLength !== bytes.length - ORIGIN_TRIAL_TOKEN_PAYLOAD_OFFSET) return undefined;
+    const payload: unknown = JSON.parse(
+      new TextDecoder("utf-8", { fatal: true }).decode(
+        bytes.subarray(ORIGIN_TRIAL_TOKEN_PAYLOAD_OFFSET),
+      ),
+    );
+    return isWebMcpOriginTrialPayload(payload) ? { payload, version } : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const webMcpOriginTrialToken = (thirdParty: boolean, identifier: string) =>
+  Schema.makeFilter(
+    (value: string) => {
+      const token = parseOriginTrialToken(value);
+      if (
+        token === undefined ||
+        token.payload.expiry <= Math.floor(Date.now() / MILLISECONDS_PER_SECOND)
+      ) {
+        return false;
+      }
+      return thirdParty
+        ? token.version === 3 && token.payload.isThirdParty === true
+        : token.payload.isThirdParty !== true;
+    },
+    {
+      identifier,
+      message: `a structurally valid, unexpired ${thirdParty ? "third" : "first"}-party WebMCP origin-trial token`,
+    },
+  );
+
+export const FirstPartyWebMcpOriginTrialToken = NonBlankString.check(
+  Schema.isBase64(),
+  webMcpOriginTrialToken(false, "webmcpifier/FirstPartyWebMcpOriginTrialToken"),
+);
+export const ThirdPartyWebMcpOriginTrialToken = NonBlankString.check(
+  Schema.isBase64(),
+  webMcpOriginTrialToken(true, "webmcpifier/ThirdPartyWebMcpOriginTrialToken"),
+);
+
 export const Pathname = NonBlankString.check(
   Schema.makeFilter((value: string) => value.startsWith("/"), {
     identifier: "webmcpifier/Pathname",
@@ -230,7 +307,7 @@ export const CapabilityConfig = Schema.Struct({
     writeToken: OpaqueToken,
   }),
   runtime: Schema.Struct({
-    originTrialToken: NonBlankString,
+    originTrialToken: ThirdPartyWebMcpOriginTrialToken,
     version: Schema.Literal(RUNTIME_VERSION),
   }),
   target: Schema.Struct({
@@ -254,7 +331,7 @@ export type CapabilityConfig = typeof CapabilityConfig.Type;
 export const PublicationInputs = Schema.Struct({
   apiOrigin: AbsoluteHttpsOrigin,
   capabilityId: OpaqueToken,
-  originTrialToken: NonBlankString,
+  originTrialToken: ThirdPartyWebMcpOriginTrialToken,
   readToken: OpaqueToken,
   runtimeIntegrity: SubresourceIntegrity,
   studioOrigin: AbsoluteHttpsOrigin,

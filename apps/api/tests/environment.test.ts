@@ -3,6 +3,7 @@ import { RuntimeContext } from "alchemy/RuntimeContext";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import { ApiInitialization, decodeApiEnvironment } from "../src/environment.ts";
 import { makeApiWorker } from "../src/worker-impl.ts";
 
@@ -17,7 +18,7 @@ const validBindings = {
   RELEASE_COMMIT: "0123456789abcdef0123456789abcdef01234567",
   RUNTIME_INTEGRITY: "sha384-dGVzdA==",
   STUDIO_ORIGIN: "https://www.webmcpifier.com",
-  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: "third-party-token",
+  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
 };
 
 const load = (bindings: unknown) => Schema.decodeUnknownEffect(ApiInitialization)(bindings);

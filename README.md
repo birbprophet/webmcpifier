@@ -153,6 +153,8 @@ The same private file must provide Alchemy's `CLOUDFLARE_ACCOUNT_ID` and `CLOUDF
 
 Any stage other than `prod` stays on `workers.dev`. Stage `prod` binds the three production hostnames and the apex redirect. The public first-party and third-party origin-trial tokens must match their registered origins; they are browser activation tokens, not private API credentials.
 
+Deployment rejects placeholders, malformed token envelopes, expired tokens, and a first-party token supplied in the third-party slot (or the reverse). This is structural release-input validation; Chrome remains the authority for token signature, enrollment, revocation, and exact registered-origin matching.
+
 The deployed release has been browser-verified with the Codex in-app browser's WebMCP support. Real Chrome first-party and third-party origin-trial tokens remain a release-owner input; until those registered tokens replace the current test values, use Chrome's WebMCP testing flag for generic Chrome verification.
 
 ## Scope

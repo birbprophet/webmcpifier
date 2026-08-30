@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import { publishCapability } from "../src/compiler.ts";
 import type { DraftCapability, ScanResult } from "../src/schema.ts";
 
@@ -52,7 +53,7 @@ it.effect("publishes only a matching inspected form", () =>
     const published = yield* publishCapability(scan, draft, {
       apiOrigin: "https://api.webmcpifier.com",
       capabilityId: "cap_test",
-      originTrialToken: "trial-token",
+      originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
       readToken: "read-token",
       runtimeIntegrity: "sha384-dGVzdA==",
       studioOrigin: "https://webmcpifier.com",
@@ -77,7 +78,7 @@ it.effect("rejects a stale binding", () =>
       publishCapability(scan, invalidDraft, {
         apiOrigin: "https://api.webmcpifier.com",
         capabilityId: "cap_test",
-        originTrialToken: "trial-token",
+        originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
         readToken: "read-token",
         runtimeIntegrity: "sha384-dGVzdA==",
         studioOrigin: "https://webmcpifier.com",

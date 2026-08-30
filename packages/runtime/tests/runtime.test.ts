@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest";
 import { Window } from "happy-dom";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import type { CapabilityConfig } from "../src/config.ts";
 import { fingerprintForm } from "../src/form.ts";
 import { installRuntime, type RuntimeDependencies } from "../src/runtime.ts";
@@ -158,7 +159,7 @@ const createFixture = async (
       writeToken: "write-token",
     },
     runtime: {
-      originTrialToken: "third-party-origin-trial-token",
+      originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
       version: "1.0.0",
     },
     target: {
@@ -204,7 +205,7 @@ const createFixture = async (
     get: () => {
       metaExistedBeforeModelContext =
         document.querySelector('meta[http-equiv="origin-trial"]')?.getAttribute("content") ===
-        "third-party-origin-trial-token";
+        THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN;
       return {
         registerTool: async (tool: CapturedTool, options: { readonly signal: AbortSignal }) => {
           captured = { signal: options.signal, tool };
@@ -435,7 +436,7 @@ it("silently no-ops when this browser has no WebMCP surface", async () => {
     }),
   ).resolves.toBeUndefined();
   expect(document.querySelector('meta[http-equiv="origin-trial"]')?.getAttribute("content")).toBe(
-    "third-party-origin-trial-token",
+    THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
   );
 });
 

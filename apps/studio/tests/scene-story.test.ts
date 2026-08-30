@@ -6,6 +6,7 @@ import type {
   ScanResult,
 } from "@webmcpifier/domain";
 import { Scene, Story } from "foldkit/test";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import {
   init,
   LoadProofSummary,
@@ -65,7 +66,7 @@ const published: PublishedCapability = {
   config: {
     capabilityId: "cap_scene",
     proof: { endpoint: "https://api.webmcpifier.test/proof/events", writeToken: "write-token" },
-    runtime: { originTrialToken: "trial-token", version: "1.0.0" },
+    runtime: { originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN, version: "1.0.0" },
     target: {
       fingerprint,
       formId: "quote-form",

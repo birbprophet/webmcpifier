@@ -1,8 +1,8 @@
 import {
   AbsoluteHttpsOrigin,
-  NonBlankString,
   ReleaseCommit,
   SubresourceIntegrity,
+  ThirdPartyWebMcpOriginTrialToken,
 } from "@webmcpifier/domain";
 import type { BrowserClient } from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
@@ -30,7 +30,7 @@ export const ApiInitialization = Schema.Struct({
   RELEASE_COMMIT: ReleaseCommit,
   RUNTIME_INTEGRITY: SubresourceIntegrity,
   STUDIO_ORIGIN: AbsoluteHttpsOrigin,
-  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: NonBlankString,
+  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: ThirdPartyWebMcpOriginTrialToken,
 });
 export type ApiInitialization = typeof ApiInitialization.Type;
 
@@ -41,7 +41,7 @@ export const ApiEnvironment = Schema.Struct({
   RELEASE_COMMIT: ReleaseCommit,
   RUNTIME_INTEGRITY: SubresourceIntegrity,
   STUDIO_ORIGIN: AbsoluteHttpsOrigin,
-  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: NonBlankString,
+  WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: ThirdPartyWebMcpOriginTrialToken,
 });
 export type ApiEnvironment = typeof ApiEnvironment.Type;
 

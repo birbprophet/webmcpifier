@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import { createApiHandler } from "../src/worker-impl.ts";
 
 const STUDIO_ORIGIN = "https://www.webmcpifier.com";
@@ -29,7 +30,7 @@ const makeHandler = (recorded: Array<unknown>) =>
     RELEASE_COMMIT: "0123456789abcdef0123456789abcdef01234567",
     RUNTIME_INTEGRITY: "sha384-dGVzdA==",
     STUDIO_ORIGIN,
-    WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: "third-party-token",
+    WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
   });
 
 const telemetryRequest = (body: unknown, origin = CUSTOMER_ORIGIN, suffix = "") =>

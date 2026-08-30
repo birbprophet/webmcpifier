@@ -6,6 +6,7 @@ import {
   ScanResult,
 } from "@webmcpifier/domain";
 import * as Schema from "effect/Schema";
+import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
 import { init, Message, SAFETY_BOUNDARY, update } from "../src/main.ts";
 
 const FORM_FINGERPRINT = "0".repeat(64);
@@ -64,7 +65,7 @@ const published = Schema.decodeUnknownSync(PublishedCapability)({
       writeToken: "write-token",
     },
     runtime: {
-      originTrialToken: "origin-trial-token",
+      originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
       version: "1.0.0",
     },
     target: {
