@@ -11,10 +11,10 @@
 
 ## Real journey evidence
 
-- [ ] The public demo initially exposes no WebMCP tools.
+- [x] The public demo initially exposes no WebMCP tools.
 - [x] The browser agent completes Inspect, Define, and Validate using WebMCPifier's WebMCP tools.
-- [ ] Only the human **Approve capability** click creates installation artifacts.
-- [ ] `get_install_skill` returns the real production tag, expected schema, verification prompt, and private receipt.
+- [x] Only the human **Approve capability** click creates installation artifacts.
+- [x] `get_install_skill` returns the real production tag, expected schema, verification prompt, and private receipt.
 - [x] The tag is added to the real demo source and deployed only through Alchemy.
 - [x] The same demo URL then exposes `prepare_service_quote`.
 - [x] The tool fills every fictional value, focuses **Review request**, and produces no submission or business-action network side effect; only metadata proof telemetry is sent.
@@ -34,4 +34,4 @@
 - [ ] Complete any platform attestations that cannot be automated.
 - [ ] Freeze both deployment and repository at least 24 hours before the September 3 deadline; make no post-deadline edits.
 
-Checked items have dated evidence in `docs/verification/2026-08-29-implementation-receipt.md`. Unchecked items require the release owner's GitHub, Chrome origin-trial, approval, recording, or Devpost action and must not be inferred from local tests.
+Checked items have dated evidence in `docs/verification/2026-08-29-implementation-receipt.md`. Remaining unchecked items require the release owner's GitHub, Chrome origin-trial, recording, or Devpost action and must not be inferred from local tests.

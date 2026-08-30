@@ -13,21 +13,21 @@ V1 supports one well-labelled semantic form on one public page. It fills that fo
 - Effect RPC and proof API: [api.webmcpifier.com](https://api.webmcpifier.com)
 - Source: [github.com/birbprophet/webmcpifier](https://github.com/birbprophet/webmcpifier)
 
-The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed pre-install application release is `fde32ec68a4e001a4de43820d64623264d005d6a`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
+The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed installed application release is `43b03fe66ab39e06d0939ed5dbcf1722851f122d`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
 
-The public demo is currently frozen in its pre-install state: it has no generated tag and exposes no WebMCP tools. After the release owner approves the visible `prepare_service_quote` contract, the generated tag will be committed and deployed as the separately verifiable installed release.
+The public demo is currently in its installed verification state. Its approved config-bearing tag exposes exactly one `prepare_service_quote` tool that fills the seven-field Northstar form for review and cannot submit it.
 
-## Current pre-install smoke test
+## Current installed smoke test
 
 Use ChatGPT's in-app browser or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled.
 
-1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm that no tools are available.
-2. Open the Studio in a clean tab and ask:
+1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm that exactly `prepare_service_quote` is available with a closed seven-field schema.
+2. Ask:
 
-   > Inspect https://demo.webmcpifier.com and draft a tool named prepare_service_quote that fills the service quote for review and never submits it.
+   > Prepare a plumbing service quote for Alex Chen at alex@example.test. It is urgent, for a house, postcode TEST 1AA, and the details are: Demonstration leak under the kitchen sink. Do not submit it.
 
-3. Confirm the agent calls `inspect_site`, `draft_form_tool`, and `validate_draft`; the Studio must stop on the visible approval contract. Only `revise_form_tool` remains exposed at that point, and no installation artifact exists.
-4. Do not click **Approve capability** unless you are the release owner performing the explicit publication step.
+3. Confirm that all seven values are prepared, focus is on **Review request**, the URL is unchanged, the review dialog is still closed, and no submission confirmation exists.
+4. Open the private receipt created during the approval flow and confirm that the invocation and success totals increased together, with no failure or abort.
 
 ## Narrated build flow
 
@@ -153,7 +153,7 @@ Deployment rejects placeholders, malformed token envelopes, expired tokens, and 
 
 The third-party token is embedded inside each generated capability config and therefore inside its contract hash. Replacing a release token requires a newly approved publication and a newly generated demo tag; do not retain or hand-edit an older tag. The final capture uses two Alchemy deployments: first the real-token release with the demo tag absent, then the exact human-approved tag installed in the demo source.
 
-The deployed release has been browser-verified with the Codex in-app browser's WebMCP support. Real Chrome first-party and third-party origin-trial tokens remain a release-owner input; until those registered tokens replace the current test values, use Chrome's WebMCP testing flag for generic Chrome verification.
+The deployed release has been browser-verified with the Codex in-app browser's WebMCP support: the Studio's authoring tools and the demo's installed third-party runtime both registered and executed. Generic Chrome verification still requires the registered WebMCP origin trial or Chrome's WebMCP testing flag and remains a separate release-owner check.
 
 ## Scope
 
