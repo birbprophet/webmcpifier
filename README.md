@@ -13,25 +13,21 @@ V1 supports one well-labelled semantic form on one public page. It fills that fo
 - Effect RPC and proof API: [api.webmcpifier.com](https://api.webmcpifier.com)
 - Source: [github.com/birbprophet/webmcpifier](https://github.com/birbprophet/webmcpifier)
 
-The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed application release is `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
+The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed pre-install application release is `fde32ec68a4e001a4de43820d64623264d005d6a`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
 
-The public demo is intentionally frozen in its installed state so judges can discover and call the final tool. The pre-install state, where the same page exposes no tools, is captured separately for the narrated submission flow.
+The public demo is currently frozen in its pre-install state: it has no generated tag and exposes no WebMCP tools. After the release owner approves the visible `prepare_service_quote` contract, the generated tag will be committed and deployed as the separately verifiable installed release.
 
-## Public smoke test
+## Current pre-install smoke test
 
 Use ChatGPT's in-app browser or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled.
 
-1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm `prepare_service_quote` has a closed seven-field schema.
-2. Ask:
-
-   > Prepare a plumbing service quote for Alex Chen at alex@example.test. It is urgent, for a house, postcode TEST 1AA, and the details are: Demonstration leak under the kitchen sink. Do not submit it.
-
-3. Confirm the page URL did not change, all seven fields pass native validity, focus is on **Review request**, and no submission confirmation exists. Opening and closing **Review request** is safe; do not press **Send request**.
-4. Open the Studio in a clean tab and ask:
+1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm that no tools are available.
+2. Open the Studio in a clean tab and ask:
 
    > Inspect https://demo.webmcpifier.com and draft a tool named prepare_service_quote that fills the service quote for review and never submits it.
 
-5. Confirm the agent calls `inspect_site`, `draft_form_tool`, and `validate_draft`; the Studio must stop on the visible approval contract. Only `revise_form_tool` remains exposed at that point, and no installation artifact exists.
+3. Confirm the agent calls `inspect_site`, `draft_form_tool`, and `validate_draft`; the Studio must stop on the visible approval contract. Only `revise_form_tool` remains exposed at that point, and no installation artifact exists.
+4. Do not click **Approve capability** unless you are the release owner performing the explicit publication step.
 
 ## Narrated build flow
 

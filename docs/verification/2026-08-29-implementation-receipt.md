@@ -4,6 +4,18 @@ Date: 2026-08-29
 
 This receipt separates design intent from executed evidence. A checked item needs a concrete command, route, or browser artifact; source presence alone is not proof.
 
+## 2026-08-30 pre-install release update
+
+The current public pre-install release is `fde32ec68a4e001a4de43820d64623264d005d6a`. The API reports that exact SHA in `x-webmcpifier-release`, and `origin/main` contains the same application source.
+
+- `vp run ready` passed formatting, lint, type checking, 65 tests, and every workspace build.
+- The public demo has one stable seven-control form, no `data-webmcpifier` runtime tag, and no WebMCP tools.
+- The public Studio was browser-verified at 1440, 805, and 390 CSS pixels with no horizontal overflow. Header, progress, workspace, and safety edges share one gutter; the desktop hero columns share one top edge.
+- The live WebMCP flow inspected the demo, drafted the exact `prepare_service_quote` contract, validated it, and stopped at the untouched human approval boundary. The target appears before the contract and approval action, including on mobile, and no install artifact exists.
+- The Studio's registered first-party origin-trial token is active in the in-app browser. The registered third-party token is configured for generated capabilities but cannot be exercised on the intentionally uninstalled demo until approval.
+
+Still pending for the current release sequence: the release owner's approval click, the newly generated tag, the installed-tool call, the fresh proof receipt, and the narrated capture. The evidence ledger below records the earlier installed rehearsal and is historical rather than evidence of the current demo state.
+
 | Contract                                              | Specified | Locally tested | Built | Deployed | Browser verified                                                                   |
 | ----------------------------------------------------- | --------- | -------------- | ----- | -------- | ---------------------------------------------------------------------------------- |
 | Public HTTPS target policy                            | Yes       | Yes            | Yes   | Yes      | Live public demo accepted through Browser Run                                      |
