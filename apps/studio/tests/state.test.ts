@@ -131,6 +131,18 @@ it("validates a matching draft into Approve without publishing it", () => {
   expect("published" in validated.model.state).toBe(false);
 });
 
+it("focuses the first invalid contract field and preserves field-level validation state", () => {
+  const blankName = update(defineModel, Message.ChangedDraftName({ value: "" })).model;
+  const invalid = update(blankName, Message.ClickedValidateDraft());
+
+  expect(invalid.commands?.map((command) => command.name)).toEqual(["FocusDraftField"]);
+  expect(invalid.commands?.[0]?.args).toEqual({ name: "tool-name" });
+  expect(invalid.model.state).toMatchObject({
+    _tag: "Define",
+    validationAttempted: true,
+  });
+});
+
 it("allows only the human approval message to issue publication", () => {
   const premature = update(defineModel, Message.ClickedApprove());
   expect(premature.commands).toBeUndefined();
@@ -195,4 +207,17 @@ it("tracks copied installation artifacts without changing publication", () => {
     expect(copied.model.state.copied).toBe("tag");
     expect(copied.model.state.published).toEqual(published);
   }
+});
+
+it("toggles bounded installation artifacts without losing the approved publication", () => {
+  const installModel = update(approveModel, Message.CompletedPublication({ published })).model;
+  const expanded = update(installModel, Message.ClickedToggleArtifact({ artifact: "skill" })).model;
+
+  expect(expanded.state).toMatchObject({ _tag: "Install", expandedArtifact: "skill" });
+  if (expanded.state._tag === "Install") {
+    expect(expanded.state.published).toEqual(published);
+  }
+
+  const collapsed = update(expanded, Message.ClickedToggleArtifact({ artifact: "skill" })).model;
+  expect(collapsed.state).toMatchObject({ _tag: "Install", expandedArtifact: "none" });
 });

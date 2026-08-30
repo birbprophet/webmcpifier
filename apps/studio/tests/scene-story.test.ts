@@ -100,11 +100,19 @@ const proof: ProofSummary = {
 
 const inspect = init({ _tag: "Studio" }).model;
 const define = update(inspect, Message.CompletedInspection({ scan })).model;
+const invalidDefine = update(
+  update(define, Message.ChangedDraftName({ value: "" })).model,
+  Message.ClickedValidateDraft(),
+).model;
 const drafted = update(define, Message.AgentDraftedCapability({ draft })).model;
 const approve = update(drafted, Message.AgentRequestedValidation()).model;
 const install = update(approve, Message.CompletedPublication({ published })).model;
 const loadingProof = update(install, Message.ClickedViewProof()).model;
 const prove = update(loadingProof, Message.CompletedProofSummary({ proof })).model;
+const emptyProof = update(
+  loadingProof,
+  Message.FailedProofSummary({ message: "Proof is not available yet." }),
+).model;
 
 it("renders every Studio state as a FoldKit Scene", () => {
   const states: ReadonlyArray<readonly [Model, string]> = [
@@ -119,6 +127,21 @@ it("renders every Studio state as a FoldKit Scene", () => {
       { update, view },
       Scene.given(model),
       Scene.tap((simulation) => expect(Scene.textContent(simulation.html)).toContain(expected)),
+    );
+  }
+});
+
+it("gives every Studio state one page-level heading", () => {
+  const states = [inspect, define, approve, install, prove] as const;
+
+  for (const model of states) {
+    Scene.scene(
+      { update, view },
+      Scene.given(model),
+      Scene.tap((simulation) => {
+        const rendered = JSON.stringify(simulation.html);
+        expect(rendered.match(/"sel":"h1"/gu)).toHaveLength(1);
+      }),
     );
   }
 });
@@ -146,6 +169,76 @@ it("renders the Studio shell through authenticated Untitled UI component anatomy
   );
 });
 
+it("links invalid contract fields to specific recovery text", () => {
+  Scene.scene(
+    { update, view },
+    Scene.given(invalidDefine),
+    Scene.tap((simulation) => {
+      const content = Scene.textContent(simulation.html);
+      const rendered = JSON.stringify(simulation.html);
+      expect(content).toContain("Tool name is missing or outside the allowed contract format.");
+      expect(content).toContain("Enter 1–30 letters, numbers, underscores, dashes, or dots.");
+      expect(rendered).toContain("aria-invalid");
+      expect(rendered).toContain("aria-describedby");
+      expect(rendered).toContain("ring-border-error-subtle");
+    }),
+  );
+});
+
+it("renders truthful static proof totals without injected trend claims", () => {
+  Scene.scene(
+    { update, view },
+    Scene.given(prove),
+    Scene.tap((simulation) => {
+      const content = Scene.textContent(simulation.html);
+      const rendered = JSON.stringify(simulation.html);
+
+      expect(content).toContain("Latency distribution");
+      expect(content).toContain("Runtime evidence");
+      expect(content).toContain("Live");
+      expect(content.match(/100%/gu)).toHaveLength(1);
+      expect(content).not.toContain("↑");
+      expect(rendered).toContain("proof-stat-featured");
+      expect(rendered).toContain("latency-track");
+      expect(rendered).toContain("proof-metadata-row");
+    }),
+  );
+});
+
+it("renders receipt loading and recoverable empty states without inventing proof", () => {
+  const states: ReadonlyArray<readonly [Model, string, string]> = [
+    [loadingProof, "Loading proof receipt…", "Refreshing"],
+    [emptyProof, "No proof events yet.", "Unavailable"],
+  ];
+
+  for (const [model, expected, status] of states) {
+    Scene.scene(
+      { update, view },
+      Scene.given(model),
+      Scene.tap((simulation) => {
+        const content = Scene.textContent(simulation.html);
+        expect(content).toContain(expected);
+        expect(content).toContain(status);
+        expect(content).not.toContain("Live");
+      }),
+    );
+  }
+});
+
+it("keeps both generated artifacts fully reachable through FoldKit expansion controls", () => {
+  Scene.scene(
+    { update, view },
+    Scene.given(install),
+    Scene.tap((simulation) => {
+      const content = Scene.textContent(simulation.html);
+      expect(content.match(/Show more/gu)).toHaveLength(2);
+      expect(content).toContain(published.scriptTag);
+      expect(content).toContain("install-webmcpifier-capability");
+      expect(content).toContain("Install the tag.");
+    }),
+  );
+});
+
 it("places the exact approval target before the contract and human action", () => {
   Scene.scene(
     { update, view },
@@ -160,7 +253,7 @@ it("places the exact approval target before the contract and human action", () =
       expect(contract).toBeGreaterThan(target);
       expect(approval).toBeGreaterThan(contract);
       expect(content.match(/Northstar Home Services/g)).toHaveLength(1);
-      expect(content).toContain("Path /quote");
+      expect(content).toContain("Path/quote");
     }),
   );
 });

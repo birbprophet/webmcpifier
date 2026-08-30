@@ -159,7 +159,7 @@ The deployed release has been browser-verified with the Codex in-app browser's W
 
 WebMCPifier does not include accounts, a project dashboard, whole-site crawling, arbitrary DOM workflows, source-repository ingestion, automatic submission, payments, authenticated-page scanning, A/B testing, agent attribution, a hosted LLM, or an embedded chat.
 
-The dated [competitive landscape](docs/research/2026-08-29-competitive-landscape.md) records the overlap with Keak, Conscriba, Latch, webmcp.com, and webmcpify without claiming those products lack unannounced capabilities. The [implementation foundations](docs/research/2026-08-29-implementation-foundations.md) pin the primary technical sources and rejected mechanisms.
+The dated [competitive landscape](docs/research/2026-08-29-competitive-landscape.md) records the overlap with Keak, Conscriba, Latch, webmcp.com, and webmcpify without claiming those products lack unannounced capabilities. The [implementation foundations](docs/research/2026-08-29-implementation-foundations.md) pin the primary technical sources and rejected mechanisms. The [UI polish source review](docs/research/2026-08-30-ui-polish-sources.md) records how the requested design references were pinned, adapted, rejected, or deferred while keeping Untitled UI/FoldKit authoritative.
 
 ## License
 

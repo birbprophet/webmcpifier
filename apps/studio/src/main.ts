@@ -11,7 +11,7 @@ import {
   ScanRequest,
   ScanResult,
   type SemanticForm,
-  type ToolParameter,
+  ToolParameter,
 } from "@webmcpifier/domain";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -85,6 +85,7 @@ const DefineState = Schema.Struct({
   draft: DraftEditor,
   error: Schema.Option(Schema.String),
   scan: ScanResult,
+  validationAttempted: Schema.Boolean,
 });
 
 const ApproveState = Schema.Struct({
@@ -99,6 +100,7 @@ const InstallState = Schema.Struct({
   _tag: Schema.Literal("Install"),
   copied: Schema.Literals(["none", "tag", "skill"]),
   error: Schema.Option(Schema.String),
+  expandedArtifact: Schema.Literals(["none", "tag", "skill"]),
   published: PublishedCapability,
   savedSkill: Schema.Boolean,
 });
@@ -112,6 +114,7 @@ export type ReceiptReference = typeof ReceiptReference.Type;
 const ProveState = Schema.Struct({
   _tag: Schema.Literal("Prove"),
   error: Schema.Option(Schema.String),
+  expandedArtifact: Schema.Literals(["none", "tag", "skill"]),
   proof: Schema.Option(ProofSummary),
   published: Schema.Option(PublishedCapability),
   receipt: ReceiptReference,
@@ -154,8 +157,10 @@ export const Message = defineMessageUnion({
   ClickedInspect: {},
   ClickedRefreshProof: {},
   ClickedSaveSkill: {},
+  ClickedToggleArtifact: { artifact: Schema.Literals(["tag", "skill"]) },
   ClickedValidateDraft: {},
   ClickedViewProof: {},
+  CompletedDraftFocus: {},
   CompletedInspection: { scan: ScanResult },
   CompletedCopy: { artifact: Schema.Literals(["tag", "skill"]) },
   CompletedProofSummary: { proof: ProofSummary },
@@ -254,6 +259,15 @@ export const CopyInstallArtifact = Command.define("CopyInstallArtifact", {
   messages: [Message.CompletedCopy, Message.FailedCopy],
 });
 
+export const FocusDraftField = Command.define("FocusDraftField", {
+  args: { name: NonBlankString },
+  execute: ({ name }) =>
+    Effect.sync(() => document.querySelector<HTMLElement>(`[name="${name}"]`)?.focus()).pipe(
+      Effect.as(Message.CompletedDraftFocus()),
+    ),
+  messages: [Message.CompletedDraftFocus],
+});
+
 const inspectState = (): StudioState => ({
   _tag: "Inspect",
   error: Option.none(),
@@ -268,6 +282,7 @@ const proveState = (
 ): StudioState => ({
   _tag: "Prove",
   error: Option.none(),
+  expandedArtifact: "none",
   proof: Option.none(),
   published,
   receipt,
@@ -310,6 +325,7 @@ const defineState = (
   draft,
   error: Option.none(),
   scan,
+  validationAttempted: false,
 });
 
 const approvedState = (scan: typeof ScanResult.Type, candidate: unknown): StudioState | undefined =>
@@ -328,10 +344,44 @@ const approvedState = (scan: typeof ScanResult.Type, candidate: unknown): Studio
     ),
   );
 
-const invalidDraftState = (state: typeof DefineState.Type): StudioState => ({
-  ...state,
-  error: Option.some(DRAFT_INVALID),
-});
+const firstInvalidDraftField = (draft: DraftEditor): string | undefined => {
+  if (!Schema.is(DraftCapability.fields.name)(draft.name)) return "tool-name";
+  if (!Schema.is(DraftCapability.fields.title)(draft.title)) return "tool-title";
+  if (!Schema.is(DraftCapability.fields.description)(draft.description)) return "tool-description";
+  for (const parameter of draft.parameters) {
+    if (!Schema.is(ToolParameter.fields.title)(parameter.title)) {
+      return `parameter-title-${parameter.controlName}`;
+    }
+    if (!Schema.is(ToolParameter.fields.description)(parameter.description)) {
+      return `parameter-description-${parameter.controlName}`;
+    }
+  }
+  return undefined;
+};
+
+const draftFieldLabel = (name: string): string =>
+  name === "tool-name"
+    ? "Tool name"
+    : name === "tool-title"
+      ? "Display title"
+      : name === "tool-description"
+        ? "Description"
+        : name.startsWith("parameter-title-")
+          ? "Agent-facing parameter title"
+          : "Agent-facing parameter description";
+
+const invalidDraftState = (state: typeof DefineState.Type): StudioState => {
+  const invalidField = firstInvalidDraftField(state.draft);
+  return {
+    ...state,
+    error: Option.some(
+      invalidField === undefined
+        ? DRAFT_INVALID
+        : `${draftFieldLabel(invalidField)} is missing or outside the allowed contract format.`,
+    ),
+    validationAttempted: true,
+  };
+};
 
 const replaceDraft = (
   state: typeof DefineState.Type,
@@ -356,7 +406,12 @@ const reviseDraft = (
 const changeEditor = (
   state: typeof DefineState.Type,
   change: (draft: DraftEditor) => DraftEditor,
-): StudioState => ({ ...state, draft: change(state.draft), error: Option.none() });
+): StudioState => ({
+  ...state,
+  draft: change(state.draft),
+  error: Option.none(),
+  validationAttempted: false,
+});
 
 const changeParameter = (
   state: typeof DefineState.Type,
@@ -401,8 +456,16 @@ const completedInspection = (state: StudioState, scan: typeof ScanResult.Type): 
     : defineState(scan, draftForForm(form));
 };
 
-const validateCurrentDraft = (state: typeof DefineState.Type): StudioState =>
-  approvedState(state.scan, state.draft) ?? invalidDraftState(state);
+const validateCurrentDraft = (state: typeof DefineState.Type): StudioUpdate => {
+  const approved = approvedState(state.scan, state.draft);
+  if (approved !== undefined) return { model: { state: approved } };
+  const invalid = invalidDraftState(state);
+  const field = firstInvalidDraftField(state.draft);
+  return {
+    ...(field === undefined ? {} : { commands: [FocusDraftField({ name: field })] }),
+    model: { state: invalid },
+  };
+};
 
 const requestInspection = (state: typeof InspectState.Type): StudioUpdate =>
   Option.match(
@@ -443,11 +506,8 @@ export const update = (model: Model, message: Message): StudioUpdate =>
         state: model.state._tag === "Define" ? replaceDraft(model.state, draft) : model.state,
       },
     }),
-    AgentRequestedValidation: () => ({
-      model: {
-        state: model.state._tag === "Define" ? validateCurrentDraft(model.state) : model.state,
-      },
-    }),
+    AgentRequestedValidation: () =>
+      model.state._tag === "Define" ? validateCurrentDraft(model.state) : { model },
     AgentRevisedCapability: ({ changes }) => ({
       model: {
         state:
@@ -571,11 +631,19 @@ export const update = (model: Model, message: Message): StudioUpdate =>
             model,
           }
         : { model },
-    ClickedValidateDraft: () => ({
+    ClickedToggleArtifact: ({ artifact }) => ({
       model: {
-        state: model.state._tag === "Define" ? validateCurrentDraft(model.state) : model.state,
+        state:
+          model.state._tag === "Install" || model.state._tag === "Prove"
+            ? {
+                ...model.state,
+                expandedArtifact: model.state.expandedArtifact === artifact ? "none" : artifact,
+              }
+            : model.state,
       },
     }),
+    ClickedValidateDraft: () =>
+      model.state._tag === "Define" ? validateCurrentDraft(model.state) : { model },
     ClickedViewProof: () => {
       if (model.state._tag !== "Install") {
         return { model };
@@ -601,6 +669,7 @@ export const update = (model: Model, message: Message): StudioUpdate =>
             : model.state,
       },
     }),
+    CompletedDraftFocus: () => ({ model }),
     CompletedProofSummary: ({ proof }) => ({
       model: {
         state:
@@ -622,6 +691,7 @@ export const update = (model: Model, message: Message): StudioUpdate =>
                 _tag: "Install",
                 copied: "none",
                 error: Option.none(),
+                expandedArtifact: "none",
                 published,
                 savedSkill: false,
               }

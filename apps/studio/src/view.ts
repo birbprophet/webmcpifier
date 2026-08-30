@@ -1,14 +1,18 @@
-import type {
+import {
   DraftCapability,
-  ProofSummary,
-  PublishedCapability,
-  ScanResult,
-  SemanticForm,
+  type ProofSummary,
+  type PublishedCapability,
+  type ScanResult,
+  type SemanticForm,
+  ToolParameter,
 } from "@webmcpifier/domain";
 import { alert as untitledAlert } from "@birbprophet/untitled-ui-foldkit/application/alerts.ts";
 import { codeSnippet as untitledCodeSnippet } from "@birbprophet/untitled-ui-foldkit/application/code-snippet.ts";
-import { metrics as untitledMetric } from "@birbprophet/untitled-ui-foldkit/application/metrics.ts";
-import { progressSteps as untitledProgressSteps } from "@birbprophet/untitled-ui-foldkit/application/progress-steps.ts";
+import { loadingIndicator as untitledLoadingIndicator } from "@birbprophet/untitled-ui-foldkit/application/loading-indicator.ts";
+import {
+  type ProgressStep,
+  progressSteps as untitledProgressSteps,
+} from "@birbprophet/untitled-ui-foldkit/application/progress-steps.ts";
 import { badge as untitledBadge } from "@birbprophet/untitled-ui-foldkit/base/badges.ts";
 import { button as untitledButton } from "@birbprophet/untitled-ui-foldkit/base/button.ts";
 import {
@@ -16,6 +20,7 @@ import {
   textarea as untitledTextarea,
 } from "@birbprophet/untitled-ui-foldkit/base/fields.ts";
 import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 import type { Document, Html, HtmlBuilder } from "foldkit/html";
 import { Message, type Model, SAFETY_GUARANTEE, type StudioState } from "./main.ts";
 
@@ -60,6 +65,8 @@ const field = (
   h: HtmlBuilder<Message>,
   options: {
     readonly hint?: string;
+    readonly invalid?: boolean;
+    readonly size?: "md" | "lg";
     readonly type?: "text" | "url";
   } = {},
 ): Html =>
@@ -67,10 +74,13 @@ const field = (
     {
       autocomplete: "off",
       hint: options.hint,
+      hideRequiredIndicator: true,
+      isInvalid: options.invalid,
+      isRequired: true,
       label,
       name: id,
       onInput,
-      size: "lg",
+      size: options.size ?? "lg",
       type: options.type ?? "text",
       value,
     },
@@ -84,10 +94,14 @@ const textAreaField = (
   onInput: (value: string) => Message,
   h: HtmlBuilder<Message>,
   hint?: string,
+  invalid = false,
 ): Html =>
   untitledTextarea(
     {
       hint,
+      hideRequiredIndicator: true,
+      isInvalid: invalid,
+      isRequired: true,
       label,
       name: id,
       onInput,
@@ -99,7 +113,7 @@ const textAreaField = (
 
 const chip = (
   label: string,
-  color: "blue" | "brand" | "gray" | "success",
+  color: "blue" | "brand" | "error" | "gray" | "success",
   h: HtmlBuilder<Message>,
 ): Html => untitledBadge({ color, label, size: "sm", type: "pill-color" }, h);
 
@@ -107,15 +121,20 @@ const introPoint = (title: string, description: string, h: HtmlBuilder<Message>)
   h.li(
     [],
     [
-      untitledBadge(
-        {
-          adornment: "icon-only",
-          color: "brand",
-          label: `${title} included`,
-          size: "md",
-          type: "pill-color",
-        },
-        h,
+      h.span(
+        [h.AriaHidden(true)],
+        [
+          untitledBadge(
+            {
+              adornment: "icon-only",
+              color: "brand",
+              label: `${title} included`,
+              size: "md",
+              type: "pill-color",
+            },
+            h,
+          ),
+        ],
       ),
       h.div([h.Class("intro-point-copy")], [h.strong([], [title]), h.span([], [description])]),
     ],
@@ -157,32 +176,74 @@ const pageHeader = (h: HtmlBuilder<Message>): Html =>
 
 const progress = (state: StudioState, h: HtmlBuilder<Message>): Html => {
   const current = stateStep(state);
+  const items: readonly ProgressStep[] = STUDIO_STEPS.map((step, index) => ({
+    description:
+      index === 0
+        ? "See the page"
+        : index === 1
+          ? "Shape the tool"
+          : index === 2
+            ? "Human gate"
+            : index === 3
+              ? "Add one tag"
+              : "Check usage",
+    status: index < current ? "complete" : index === current ? "current" : "incomplete",
+    title: step,
+  }));
   return h.nav(
     [h.Class("progress-shell"), h.AriaLabel("Studio progress")],
     [
-      untitledProgressSteps(
-        {
-          connector: true,
-          items: STUDIO_STEPS.map((step, index) => ({
-            description:
-              index === 0
-                ? "See the page"
-                : index === 1
-                  ? "Shape the tool"
-                  : index === 2
-                    ? "Human gate"
-                    : index === 3
-                      ? "Add one tag"
-                      : "Check usage",
-            status: index < current ? "complete" : index === current ? "current" : "incomplete",
-            title: step,
-          })),
-          orientation: "horizontal",
-          size: "sm",
-          type: "icon",
-          variant: "icons-with-text",
-        },
-        h,
+      h.div(
+        [h.Class("progress-desktop")],
+        [
+          untitledProgressSteps(
+            {
+              connector: true,
+              items,
+              orientation: "horizontal",
+              size: "sm",
+              type: "icon",
+              variant: "icons-with-text",
+            },
+            h,
+          ),
+        ],
+      ),
+      h.div(
+        [h.Class("progress-mobile")],
+        [
+          h.div(
+            [h.Class("progress-mobile-copy")],
+            [
+              h.span([], [`Step ${String(current + 1)} of ${String(STUDIO_STEPS.length)}`]),
+              h.strong([], [STUDIO_STEPS[current] ?? STUDIO_STEPS[0]]),
+            ],
+          ),
+          h.div(
+            [h.Class("progress-mobile-meter"), h.AriaHidden(true)],
+            [
+              untitledProgressSteps(
+                {
+                  connector: false,
+                  items,
+                  orientation: "horizontal",
+                  size: "sm",
+                  type: "icon",
+                  variant: "minimal-icons",
+                },
+                h,
+              ),
+            ],
+          ),
+          h.ol(
+            [h.Class("sr-only"), h.AriaLabel("Studio steps")],
+            items.map((item) =>
+              h.li(item.status === "current" ? [h.AriaCurrent("step")] : [], [
+                `${item.title}: ${item.status}`,
+              ]),
+            ),
+          ),
+        ],
       ),
     ],
   );
@@ -230,12 +291,13 @@ const panelHeading = (
   title: string,
   description: string,
   h: HtmlBuilder<Message>,
+  options: { readonly level?: "h1" | "h2" } = {},
 ): Html =>
   h.div(
     [h.Class("panel-heading")],
     [
       h.p([h.Class("eyebrow")], [eyebrow]),
-      h.h2([], [title]),
+      ...(options.level === "h1" ? [h.h1([], [title])] : [h.h2([], [title])]),
       h.p([h.Class("muted")], [description]),
     ],
   );
@@ -250,7 +312,7 @@ const targetSummary = (
     [h.Class("target-summary")],
     [
       h.div([], [h.p([h.Class("eyebrow")], ["Target"]), h.h3([], [title]), h.code([], [url])]),
-      chip(`Path ${pathname}`, "gray", h),
+      h.div([h.Class("target-path")], [h.span([], ["Path"]), h.code([], [pathname])]),
     ],
   );
 
@@ -413,9 +475,14 @@ const formPicker = (
 
 const parameterEditor = (
   parameter: Extract<StudioState, { readonly _tag: "Define" }>["draft"]["parameters"][number],
+  validationAttempted: boolean,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.keyed("div")(
+): Html => {
+  const titleInvalid =
+    validationAttempted && !Schema.is(ToolParameter.fields.title)(parameter.title);
+  const descriptionInvalid =
+    validationAttempted && !Schema.is(ToolParameter.fields.description)(parameter.description);
+  return h.keyed("div")(
     parameter.controlName,
     [h.Class("parameter-editor")],
     [
@@ -432,6 +499,11 @@ const parameterEditor = (
         parameter.title,
         (value) => Message.ChangedParameterTitle({ controlName: parameter.controlName, value }),
         h,
+        {
+          hint: titleInvalid ? "Enter a non-blank title of 500 characters or fewer." : undefined,
+          invalid: titleInvalid,
+          size: "md",
+        },
       ),
       field(
         `parameter-description-${parameter.controlName}`,
@@ -440,16 +512,30 @@ const parameterEditor = (
         (value) =>
           Message.ChangedParameterDescription({ controlName: parameter.controlName, value }),
         h,
-        { hint: "Keep it short and specific." },
+        {
+          hint: descriptionInvalid
+            ? "Enter a non-blank description of 150 characters or fewer."
+            : "Keep it short and specific.",
+          invalid: descriptionInvalid,
+          size: "md",
+        },
       ),
     ],
   );
+};
 
 const draftEditor = (
   state: Extract<StudioState, { readonly _tag: "Define" }>,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.section(
+): Html => {
+  const nameInvalid =
+    state.validationAttempted && !Schema.is(DraftCapability.fields.name)(state.draft.name);
+  const titleInvalid =
+    state.validationAttempted && !Schema.is(DraftCapability.fields.title)(state.draft.title);
+  const descriptionInvalid =
+    state.validationAttempted &&
+    !Schema.is(DraftCapability.fields.description)(state.draft.description);
+  return h.section(
     [h.Class("panel")],
     [
       panelHeading(
@@ -457,6 +543,7 @@ const draftEditor = (
         "Write the public contract",
         "Only these reviewed names and descriptions become agent context.",
         h,
+        { level: "h1" },
       ),
       h.div(
         [h.Class("form-stack")],
@@ -468,7 +555,12 @@ const draftEditor = (
             state.draft.name,
             (value) => Message.ChangedDraftName({ value }),
             h,
-            { hint: "Letters, numbers, underscore, dash, or dot. Maximum 30 characters." },
+            {
+              hint: nameInvalid
+                ? "Enter 1–30 letters, numbers, underscores, dashes, or dots."
+                : "Letters, numbers, underscore, dash, or dot. Maximum 30 characters.",
+              invalid: nameInvalid,
+            },
           ),
           field(
             "tool-title",
@@ -476,6 +568,12 @@ const draftEditor = (
             state.draft.title,
             (value) => Message.ChangedDraftTitle({ value }),
             h,
+            {
+              hint: titleInvalid
+                ? "Enter a non-blank display title of 500 characters or fewer."
+                : undefined,
+              invalid: titleInvalid,
+            },
           ),
           textAreaField(
             "tool-description",
@@ -483,6 +581,10 @@ const draftEditor = (
             state.draft.description,
             (value) => Message.ChangedDraftDescription({ value }),
             h,
+            descriptionInvalid
+              ? "Enter a non-blank description of 500 characters or fewer."
+              : undefined,
+            descriptionInvalid,
           ),
           h.div(
             [h.Class("parameter-stack")],
@@ -491,7 +593,9 @@ const draftEditor = (
                 [h.Class("section-label")],
                 [h.h3([], ["Parameters"]), h.span([], [String(state.draft.parameters.length)])],
               ),
-              ...state.draft.parameters.map((parameter) => parameterEditor(parameter, h)),
+              ...state.draft.parameters.map((parameter) =>
+                parameterEditor(parameter, state.validationAttempted, h),
+              ),
             ],
           ),
           safetyCard(h),
@@ -503,6 +607,7 @@ const draftEditor = (
       ),
     ],
   );
+};
 
 const defineView = (
   state: Extract<StudioState, { readonly _tag: "Define" }>,
@@ -527,18 +632,16 @@ const contractSummary = (draft: DraftCapability, h: HtmlBuilder<Message>): Html 
       h.p([], [draft.description]),
       h.dl(
         [h.Class("contract-parameters")],
-        draft.parameters.flatMap((parameter) => [
-          h.keyed("dt")(
-            `${parameter.name}-term`,
-            [],
-            [h.code([], [parameter.name]), chip(parameter.kind, "blue", h)],
+        draft.parameters.map((parameter) =>
+          h.keyed("div")(
+            parameter.name,
+            [h.Class("contract-parameter")],
+            [
+              h.dt([], [h.code([], [parameter.name]), chip(parameter.kind, "blue", h)]),
+              h.dd([], [h.strong([], [parameter.title]), h.span([], [parameter.description])]),
+            ],
           ),
-          h.keyed("dd")(
-            `${parameter.name}-description`,
-            [],
-            [h.strong([], [parameter.title]), h.span([], [parameter.description])],
-          ),
-        ]),
+        ),
       ),
     ],
   );
@@ -558,17 +661,23 @@ const approveView = (
             "One human decision creates publication",
             "Check the target, contract, bindings, and safety guarantee. No tag or installation skill exists yet.",
             h,
+            { level: "h1" },
           ),
           targetSummary(state.scan.title, state.scan.url, state.scan.pathname, h),
           contractSummary(state.draft, h),
           safetyCard(h),
           h.div(
-            [h.Class("approval-notice")],
+            [h.Class("approval-boundary")],
             [
-              h.strong([], ["Publication boundary"]),
-              h.p(
-                [],
-                ["The button below is the only path that can mint an installation artifact."],
+              untitledAlert(
+                {
+                  color: "brand",
+                  confirmLabel: "",
+                  description:
+                    "The button below is the only path that can mint an installation artifact.",
+                  title: "Publication boundary",
+                },
+                h,
               ),
             ],
           ),
@@ -596,6 +705,7 @@ const codeReceipt = (
   className: string,
   h: HtmlBuilder<Message>,
   copy?: { readonly copied: boolean; readonly message: Message },
+  expansion?: { readonly expanded: boolean; readonly message: Message },
 ): Html =>
   h.section(
     [h.Class("receipt-card code-receipt")],
@@ -618,11 +728,13 @@ const codeReceipt = (
             {
               code: content,
               copied: copy?.copied,
+              expanded: expansion?.expanded,
               language: className.includes("tag-block") ? "html" : "markdown",
               maxHeight: className.includes("tag-block") ? 180 : 420,
               onCopy: copy?.message,
+              onToggleExpanded: expansion?.message,
               showLineNumbers: false,
-              variant: "modern",
+              variant: "plain",
             },
             h,
           ),
@@ -636,6 +748,12 @@ const installView = (
   h: HtmlBuilder<Message>,
 ): Html => {
   const published = state.published;
+  const saveControl = state.savedSkill
+    ? h.div(
+        [h.Class("save-confirmation"), h.Role("status")],
+        [chip("Saved", "success", h), h.span([], ["SKILL.md downloaded"])],
+      )
+    : actionButton("Save as SKILL.md", Message.ClickedSaveSkill(), h, { kind: "secondary" });
   return h.div(
     [h.Class("single-column receipt-column")],
     [
@@ -647,6 +765,7 @@ const installView = (
             "Approved artifacts are ready",
             "Use the tag directly or hand the concise SKILL.md to a repository agent.",
             h,
+            { level: "h1" },
           ),
           targetSummary(
             published.config.tool.title,
@@ -659,51 +778,91 @@ const installView = (
             [h.span([], ["Capability hash"]), h.code([], [published.capabilityHash])],
           ),
           h.dl(
-            [h.Class("proof-details")],
+            [h.Class("install-details")],
             [
-              h.dt([], ["Expected tool"]),
-              h.dd([], [h.code([], [published.config.tool.name])]),
-              h.dt([], ["Runtime"]),
-              h.dd([], [h.code([], [published.config.runtime.version])]),
-              h.dt([], ["Private receipt"]),
-              h.dd([], [h.code([], [published.receiptUrl])]),
+              h.div(
+                [h.Class("install-detail")],
+                [h.dt([], ["Expected tool"]), h.dd([], [h.code([], [published.config.tool.name])])],
+              ),
+              h.div(
+                [h.Class("install-detail")],
+                [h.dt([], ["Runtime"]), h.dd([], [h.code([], [published.config.runtime.version])])],
+              ),
+              h.div(
+                [h.Class("install-detail")],
+                [h.dt([], ["Private receipt"]), h.dd([], [h.code([], [published.receiptUrl])])],
+              ),
             ],
           ),
         ],
       ),
-      codeReceipt("Installation tag", published.scriptTag, "code-block tag-block", h, {
-        copied: state.copied === "tag",
-        message: Message.ClickedCopyInstallationTag(),
-      }),
-      codeReceipt("Installation skill", published.installSkill, "code-block skill-block", h, {
-        copied: state.copied === "skill",
-        message: Message.ClickedCopyInstallSkill(),
-      }),
+      codeReceipt(
+        "Installation tag",
+        published.scriptTag,
+        "code-block tag-block",
+        h,
+        {
+          copied: state.copied === "tag",
+          message: Message.ClickedCopyInstallationTag(),
+        },
+        {
+          expanded: state.expandedArtifact === "tag",
+          message: Message.ClickedToggleArtifact({ artifact: "tag" }),
+        },
+      ),
+      codeReceipt(
+        "Installation skill",
+        published.installSkill,
+        "code-block skill-block",
+        h,
+        {
+          copied: state.copied === "skill",
+          message: Message.ClickedCopyInstallSkill(),
+        },
+        {
+          expanded: state.expandedArtifact === "skill",
+          message: Message.ClickedToggleArtifact({ artifact: "skill" }),
+        },
+      ),
       h.div(
         [h.Class("actions split-actions")],
-        [
-          actionButton(
-            state.savedSkill ? "Saved SKILL.md" : "Save as SKILL.md",
-            Message.ClickedSaveSkill(),
-            h,
-            { kind: "secondary" },
-          ),
-          actionButton("View proof receipt", Message.ClickedViewProof(), h),
-        ],
+        [saveControl, actionButton("View proof receipt", Message.ClickedViewProof(), h)],
       ),
     ],
   );
 };
 
-const metric = (label: string, value: number | string, h: HtmlBuilder<Message>): Html =>
-  untitledMetric(
-    {
-      showActions: false,
-      subtitle: label,
-      title: String(value),
-      variant: "simple",
-    },
-    h,
+const proofStat = (
+  label: string,
+  value: number | string,
+  h: HtmlBuilder<Message>,
+  featured = false,
+): Html =>
+  h.div(
+    [h.Class(featured ? "proof-stat proof-stat-featured" : "proof-stat")],
+    [
+      h.dt([h.Class("proof-stat-label")], [label]),
+      h.dd([], [h.strong([h.Class("proof-stat-value")], [String(value)])]),
+    ],
+  );
+
+const proofTimestamp = (value: string): string => {
+  const normalized = value.replace("T", " ").replace(/\.\d{3}Z$/u, " UTC");
+  return normalized === value ? value : normalized;
+};
+
+const proofCardHeading = (
+  title: string,
+  description: string,
+  h: HtmlBuilder<Message>,
+  adornment?: Html,
+): Html =>
+  h.div(
+    [h.Class("proof-card-heading")],
+    [
+      h.div([], [h.h3([], [title]), h.p([], [description])]),
+      ...(adornment === undefined ? [] : [adornment]),
+    ],
   );
 
 const proofDetails = (proof: ProofSummary, h: HtmlBuilder<Message>): Html => {
@@ -711,51 +870,101 @@ const proofDetails = (proof: ProofSummary, h: HtmlBuilder<Message>): Html => {
     proof.invocations === 0
       ? "0%"
       : `${String(Math.round((proof.successes / proof.invocations) * 100))}%`;
+  const latency = [
+    { count: proof.latency.atMost100Ms, key: "at-most-100", label: "≤ 100 ms" },
+    { count: proof.latency.atMost300Ms, key: "at-most-300", label: "≤ 300 ms" },
+    { count: proof.latency.atMost1000Ms, key: "at-most-1000", label: "≤ 1,000 ms" },
+    { count: proof.latency.atMost3000Ms, key: "at-most-3000", label: "≤ 3,000 ms" },
+    { count: proof.latency.over3000Ms, key: "over-3000", label: "> 3,000 ms" },
+  ] as const;
+  const latencyWidth = (count: number): string =>
+    proof.invocations === 0
+      ? "0%"
+      : `${String(Math.min(100, Math.round((count / proof.invocations) * 100)))}%`;
   return h.div(
     [h.Class("proof-stack")],
     [
-      h.div(
-        [h.Class("metrics")],
+      h.dl(
+        [h.Class("proof-stats"), h.AriaLabel("Proof totals")],
         [
-          metric("Invocations", proof.invocations, h),
-          metric("Successes", proof.successes, h),
-          metric("Failures", proof.failures, h),
-          metric("Aborts", proof.aborts, h),
-          metric("Success rate", successRate, h),
+          proofStat("Invocations", proof.invocations, h),
+          proofStat("Successes", proof.successes, h),
+          proofStat("Failures", proof.failures, h),
+          proofStat("Aborts", proof.aborts, h),
+          proofStat("Success rate", successRate, h, true),
         ],
       ),
-      h.section(
-        [h.Class("receipt-card")],
+      h.div(
+        [h.Class("proof-detail-grid")],
         [
-          h.h3([], ["Latency buckets"]),
-          h.dl(
-            [h.Class("proof-details")],
+          h.section(
+            [h.Class("proof-card")],
             [
-              h.dt([], ["≤ 100 ms"]),
-              h.dd([], [String(proof.latency.atMost100Ms)]),
-              h.dt([], ["≤ 300 ms"]),
-              h.dd([], [String(proof.latency.atMost300Ms)]),
-              h.dt([], ["≤ 1,000 ms"]),
-              h.dd([], [String(proof.latency.atMost1000Ms)]),
-              h.dt([], ["≤ 3,000 ms"]),
-              h.dd([], [String(proof.latency.atMost3000Ms)]),
-              h.dt([], ["> 3,000 ms"]),
-              h.dd([], [String(proof.latency.over3000Ms)]),
+              proofCardHeading(
+                "Latency distribution",
+                "Completed invocations by duration",
+                h,
+                chip(`${String(proof.invocations)} total`, "gray", h),
+              ),
+              h.ul(
+                [h.Class("latency-list")],
+                latency.map((bucket) =>
+                  h.keyed("li")(
+                    bucket.key,
+                    [],
+                    [
+                      h.div(
+                        [h.Class("latency-row")],
+                        [h.span([], [bucket.label]), h.strong([], [String(bucket.count)])],
+                      ),
+                      h.div(
+                        [h.Class("latency-track"), h.AriaHidden(true)],
+                        [h.span([h.Style({ width: latencyWidth(bucket.count) })])],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-        ],
-      ),
-      h.dl(
-        [h.Class("proof-details")],
-        [
-          h.dt([], ["Origin"]),
-          h.dd([], [h.code([], [proof.origin])]),
-          h.dt([], ["Runtime"]),
-          h.dd([], [h.code([], [proof.runtimeVersion])]),
-          h.dt([], ["Last seen"]),
-          h.dd([], [proof.lastSeenAt]),
-          h.dt([], ["Capability hash"]),
-          h.dd([], [h.code([], [proof.capabilityHash])]),
+          h.section(
+            [h.Class("proof-card")],
+            [
+              proofCardHeading("Runtime evidence", "Exact public target and installed build", h),
+              h.dl(
+                [h.Class("proof-metadata")],
+                [
+                  h.div(
+                    [h.Class("proof-metadata-row")],
+                    [h.dt([], ["Origin"]), h.dd([], [h.code([], [proof.origin])])],
+                  ),
+                  h.div(
+                    [h.Class("proof-metadata-row")],
+                    [h.dt([], ["Runtime"]), h.dd([], [h.code([], [proof.runtimeVersion])])],
+                  ),
+                  h.div(
+                    [h.Class("proof-metadata-row")],
+                    [
+                      h.dt([], ["Last seen"]),
+                      h.dd(
+                        [],
+                        [
+                          h.time(
+                            [h.Attribute("datetime", proof.lastSeenAt), h.Title(proof.lastSeenAt)],
+                            [proofTimestamp(proof.lastSeenAt)],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  h.div(
+                    [h.Class("proof-metadata-row")],
+                    [h.dt([], ["Capability hash"]), h.dd([], [h.code([], [proof.capabilityHash])])],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     ],
@@ -764,6 +973,7 @@ const proofDetails = (proof: ProofSummary, h: HtmlBuilder<Message>): Html => {
 
 const priorInstallation = (
   published: Option.Option<PublishedCapability>,
+  expandedArtifact: "none" | "tag" | "skill",
   h: HtmlBuilder<Message>,
 ): readonly Html[] =>
   Option.match(published, {
@@ -773,8 +983,28 @@ const priorInstallation = (
         [h.Class("prior-installation")],
         [
           h.summary([], ["Approved installation details"]),
-          codeReceipt("Installation tag", artifact.scriptTag, "code-block tag-block", h),
-          codeReceipt("Installation skill", artifact.installSkill, "code-block skill-block", h),
+          codeReceipt(
+            "Installation tag",
+            artifact.scriptTag,
+            "code-block tag-block",
+            h,
+            undefined,
+            {
+              expanded: expandedArtifact === "tag",
+              message: Message.ClickedToggleArtifact({ artifact: "tag" }),
+            },
+          ),
+          codeReceipt(
+            "Installation skill",
+            artifact.installSkill,
+            "code-block skill-block",
+            h,
+            undefined,
+            {
+              expanded: expandedArtifact === "skill",
+              message: Message.ClickedToggleArtifact({ artifact: "skill" }),
+            },
+          ),
         ],
       ),
     ],
@@ -783,8 +1013,19 @@ const priorInstallation = (
 const proveView = (
   state: Extract<StudioState, { readonly _tag: "Prove" }>,
   h: HtmlBuilder<Message>,
-): Html =>
-  h.div(
+): Html => {
+  const proofStatus: {
+    readonly color: "brand" | "error" | "gray" | "success";
+    readonly label: string;
+  } =
+    state.status === "loading"
+      ? { color: "brand", label: "Refreshing" }
+      : Option.isSome(state.error)
+        ? { color: "error", label: "Unavailable" }
+        : Option.isSome(state.proof)
+          ? { color: "success", label: "Live" }
+          : { color: "gray", label: "No events" };
+  return h.div(
     [h.Class("single-column receipt-column")],
     [
       h.section(
@@ -795,6 +1036,7 @@ const proveView = (
             "Aggregate proof, without captured form data",
             "The receipt keeps outcomes and latency buckets only. No field values are retained.",
             h,
+            { level: "h1" },
           ),
           h.div(
             [h.Class("receipt-identity")],
@@ -807,8 +1049,8 @@ const proveView = (
                 ],
               ),
               h.span(
-                [h.Class("receipt-live")],
-                [chip(state.status === "loading" ? "Refreshing" : "Live", "success", h)],
+                [h.Class("receipt-live"), h.Role("status")],
+                [chip(proofStatus.label, proofStatus.color, h)],
               ),
             ],
           ),
@@ -816,13 +1058,23 @@ const proveView = (
             onNone: () => [
               h.div(
                 [h.Class("empty-proof")],
-                [state.status === "loading" ? "Loading proof receipt…" : "No proof events yet."],
+                state.status === "loading"
+                  ? [
+                      untitledLoadingIndicator(
+                        { label: "Loading proof receipt…", size: "sm", type: "line-simple" },
+                        h,
+                      ),
+                    ]
+                  : [
+                      h.strong([], ["No proof events yet."]),
+                      h.span([], ["Run the installed tool, then refresh this private receipt."]),
+                    ],
               ),
             ],
             onSome: (proof) => [proofDetails(proof, h)],
           }),
           h.div(
-            [h.Class("actions")],
+            [h.Class("actions proof-actions")],
             [
               actionButton("Refresh proof", Message.ClickedRefreshProof(), h, {
                 kind: "secondary",
@@ -832,9 +1084,10 @@ const proveView = (
           ),
         ],
       ),
-      ...priorInstallation(state.published, h),
+      ...priorInstallation(state.published, state.expandedArtifact, h),
     ],
   );
+};
 
 const stateView = (state: StudioState, h: HtmlBuilder<Message>): Html => {
   switch (state._tag) {
