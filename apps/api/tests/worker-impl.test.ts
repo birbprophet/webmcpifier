@@ -86,6 +86,9 @@ it.effect("limits RPC CORS to the configured Studio origin", () =>
 
     expect(allowed.status).toBe(204);
     expect(allowed.headers.get("access-control-allow-origin")).toBe(STUDIO_ORIGIN);
+    expect(allowed.headers.get("access-control-allow-headers")).toBe(
+      "b3, content-type, traceparent",
+    );
     expect(denied.status).toBe(403);
   }),
 );

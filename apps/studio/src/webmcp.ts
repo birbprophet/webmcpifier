@@ -23,7 +23,7 @@ export interface ModelContextTool {
     readonly untrustedContentHint?: boolean;
   };
   readonly description: string;
-  readonly execute: (inputObject: object, options: ToolExecuteOptions) => Promise<unknown>;
+  readonly execute: (inputObject: object, options?: ToolExecuteOptions) => Promise<unknown>;
   readonly inputSchema?: Record<string, unknown>;
   readonly name: string;
   readonly title?: string;
@@ -59,6 +59,11 @@ export const ToolContext = Schema.Union([
 ]);
 export type ToolContext = typeof ToolContext.Type;
 type Dispatch = (message: Message) => void;
+
+const executionSignal = (
+  options: ToolExecuteOptions | undefined,
+  registrationSignal: AbortSignal,
+): AbortSignal => options?.signal ?? registrationSignal;
 
 const MODEL_CONTEXT_REGISTRATION_FAILED = "Browser-agent actions could not be registered.";
 const AGENT_INSPECTION_FAILED = "The browser-agent inspection failed.";
@@ -96,10 +101,12 @@ const inventoryOutput = (scan: ScanResult) => ({
   },
 });
 
-const inspectTool = (dispatch: Dispatch): ModelContextTool => ({
+const inspectTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: true },
   description: "Inspect one HTTPS page for supported semantic forms without submitting anything.",
   execute: async (inputObject, options) => {
+    const signal = executionSignal(options, registrationSignal);
+    signal.throwIfAborted();
     const input = decodeInput(AgentInspectInput, inputObject);
     const request = Schema.decodeUnknownSync(ScanRequest)({
       safetyBoundary: SAFETY_BOUNDARY,
@@ -107,11 +114,11 @@ const inspectTool = (dispatch: Dispatch): ModelContextTool => ({
       url: input.url,
     });
     try {
-      const scan = await inspectSiteForAgent(request, options.signal);
+      const scan = await inspectSiteForAgent(request, signal);
       dispatch(Message.CompletedInspection({ scan }));
       return inventoryOutput(scan);
     } catch (cause) {
-      options.signal.throwIfAborted();
+      signal.throwIfAborted();
       dispatch(Message.FailedInspection({ message: AGENT_INSPECTION_FAILED }));
       throw new Error(AGENT_INSPECTION_FAILED, { cause });
     }
@@ -121,11 +128,11 @@ const inspectTool = (dispatch: Dispatch): ModelContextTool => ({
   title: "Inspect site",
 });
 
-const draftTool = (dispatch: Dispatch): ModelContextTool => ({
+const draftTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: false },
   description: "Draft a complete fill-for-review form tool contract from the visible inventory.",
   execute: async (inputObject, options) => {
-    options.signal.throwIfAborted();
+    executionSignal(options, registrationSignal).throwIfAborted();
     const draft = decodeInput(DraftCapability, inputObject);
     dispatch(Message.AgentDraftedCapability({ draft }));
     return { draftAccepted: true, publicationCreated: false };
@@ -135,11 +142,11 @@ const draftTool = (dispatch: Dispatch): ModelContextTool => ({
   title: "Draft form tool",
 });
 
-const reviseTool = (dispatch: Dispatch): ModelContextTool => ({
+const reviseTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: false },
   description: "Replace the current form tool draft with a complete revised contract.",
   execute: async (inputObject, options) => {
-    options.signal.throwIfAborted();
+    executionSignal(options, registrationSignal).throwIfAborted();
     const draft = decodeInput(DraftCapability, inputObject);
     dispatch(Message.AgentRevisedCapability({ draft }));
     return { publicationCreated: false, revisionAccepted: true };
@@ -149,11 +156,11 @@ const reviseTool = (dispatch: Dispatch): ModelContextTool => ({
   title: "Revise form tool",
 });
 
-const validateTool = (dispatch: Dispatch): ModelContextTool => ({
+const validateTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: false },
   description: "Validate a complete form tool draft and stage it for human approval.",
   execute: async (inputObject, options) => {
-    options.signal.throwIfAborted();
+    executionSignal(options, registrationSignal).throwIfAborted();
     const draft = decodeInput(DraftCapability, inputObject);
     dispatch(Message.AgentValidatedCapability({ draft }));
     return {
@@ -167,11 +174,14 @@ const validateTool = (dispatch: Dispatch): ModelContextTool => ({
   title: "Validate draft",
 });
 
-const installSkillTool = (installSkill: string): ModelContextTool => ({
+const installSkillTool = (
+  installSkill: string,
+  registrationSignal: AbortSignal,
+): ModelContextTool => ({
   annotations: { readOnlyHint: true, untrustedContentHint: false },
   description: "Read the approved repository installation skill exactly as published.",
   execute: async (inputObject, options) => {
-    options.signal.throwIfAborted();
+    executionSignal(options, registrationSignal).throwIfAborted();
     const input = decodeInput(InstallSkillInput, inputObject);
     return { content: installSkill, filename: "SKILL.md", stackHint: input.stack_hint };
   },
@@ -183,18 +193,21 @@ const installSkillTool = (installSkill: string): ModelContextTool => ({
 const proofTool = (
   receipt: typeof ReceiptReference.Type,
   dispatch: Dispatch,
+  registrationSignal: AbortSignal,
 ): ModelContextTool => ({
   annotations: { readOnlyHint: true, untrustedContentHint: false },
   description: "Refresh the aggregate proof receipt for this approved capability.",
   execute: async (inputObject, options) => {
+    const signal = executionSignal(options, registrationSignal);
+    signal.throwIfAborted();
     decodeInput(EmptyInput, inputObject);
     const request = Schema.decodeUnknownSync(ProofSummaryRequest)(receipt);
     try {
-      const proof = await getProofSummaryForAgent(request, options.signal);
+      const proof = await getProofSummaryForAgent(request, signal);
       dispatch(Message.CompletedProofSummary({ proof }));
       return proof;
     } catch (cause) {
-      options.signal.throwIfAborted();
+      signal.throwIfAborted();
       dispatch(Message.FailedProofSummary({ message: AGENT_PROOF_FAILED }));
       throw new Error(AGENT_PROOF_FAILED, { cause });
     }
@@ -204,18 +217,26 @@ const proofTool = (
   title: "Get proof summary",
 });
 
-const toolsFor = (context: ToolContext, dispatch: Dispatch): ReadonlyArray<ModelContextTool> => {
+const toolsFor = (
+  context: ToolContext,
+  dispatch: Dispatch,
+  registrationSignal: AbortSignal,
+): ReadonlyArray<ModelContextTool> => {
   switch (context._tag) {
     case "Inspect":
-      return [inspectTool(dispatch)];
+      return [inspectTool(dispatch, registrationSignal)];
     case "Define":
-      return [draftTool(dispatch), reviseTool(dispatch), validateTool(dispatch)];
+      return [
+        draftTool(dispatch, registrationSignal),
+        reviseTool(dispatch, registrationSignal),
+        validateTool(dispatch, registrationSignal),
+      ];
     case "Approve":
-      return [reviseTool(dispatch)];
+      return [reviseTool(dispatch, registrationSignal)];
     case "Install":
-      return [installSkillTool(context.installSkill)];
+      return [installSkillTool(context.installSkill, registrationSignal)];
     case "Prove":
-      return [proofTool(context.receipt, dispatch)];
+      return [proofTool(context.receipt, dispatch, registrationSignal)];
   }
 };
 
@@ -249,7 +270,7 @@ export const registerStateTools = (
     return { controller, ready: Promise.resolve() };
   }
   const ready = Promise.all(
-    toolsFor(context, dispatch).map((tool) =>
+    toolsFor(context, dispatch, controller.signal).map((tool) =>
       modelContext.registerTool(tool, { signal: controller.signal }),
     ),
   )

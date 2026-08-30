@@ -29,6 +29,8 @@ import {
 const TELEMETRY_PATH = "/proof/events";
 const RPC_PATHS = new Set(["/", "/rpc"]);
 const MAX_TELEMETRY_BYTES = 8_192;
+const TELEMETRY_REQUEST_HEADERS = "content-type";
+const RPC_REQUEST_HEADERS = "b3, content-type, traceparent";
 const strict = { onExcessProperty: "error" } as const;
 
 const HTTP_STATUS = {
@@ -57,10 +59,10 @@ const withRelease = (
 ): HttpServerResponse.HttpServerResponse =>
   HttpServerResponse.setHeader(response, "x-webmcpifier-release", releaseCommit);
 
-const preflight = (origin: string): HttpServerResponse.HttpServerResponse =>
+const preflight = (origin: string, requestHeaders: string): HttpServerResponse.HttpServerResponse =>
   HttpServerResponse.empty({
     headers: {
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": requestHeaders,
       "access-control-allow-methods": "POST, OPTIONS",
       "access-control-allow-origin": origin,
       vary: "Origin",
@@ -157,10 +159,10 @@ const dispatch = (
 
     if (request.method === "OPTIONS") {
       if (url.pathname === TELEMETRY_PATH && requestOrigin !== undefined) {
-        return preflight(requestOrigin);
+        return preflight(requestOrigin, TELEMETRY_REQUEST_HEADERS);
       }
       if (RPC_PATHS.has(url.pathname) && requestOrigin === environment.STUDIO_ORIGIN) {
-        return preflight(requestOrigin);
+        return preflight(requestOrigin, RPC_REQUEST_HEADERS);
       }
       return jsonError("origin_forbidden", HTTP_STATUS.forbidden);
     }

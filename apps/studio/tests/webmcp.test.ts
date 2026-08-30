@@ -83,6 +83,28 @@ it("owns one AbortSignal for every tool in a state and aborts it on release", as
   expect(registrations.every(({ signal }) => signal?.aborted === true)).toBe(true);
 });
 
+it("uses the registration signal when a browser omits execution options", async () => {
+  const registrations: Array<{
+    readonly signal: AbortSignal | undefined;
+    readonly tool: ModelContextTool;
+  }> = [];
+  const registration = registerStateTools(
+    { _tag: "Install", installSkill: "Install the approved capability." },
+    recordingModelContext(registrations),
+    () => undefined,
+  );
+
+  await registration.ready;
+  const tool = registrations[0]?.tool;
+  await expect(tool?.execute({})).resolves.toMatchObject({
+    content: "Install the approved capability.",
+    filename: "SKILL.md",
+  });
+
+  registration.controller.abort(new Error("Studio state was released."));
+  await expect(tool?.execute({})).rejects.toThrow("Studio state was released.");
+});
+
 it("marks inspected inventory as untrusted browser-agent content", async () => {
   const registrations: Array<{
     readonly signal: AbortSignal | undefined;
