@@ -27,7 +27,7 @@ import {
 } from "./proof.ts";
 
 const TELEMETRY_PATH = "/proof/events";
-const RPC_PATHS = new Set(["/", "/rpc"]);
+const RPC_PATHS = new Set(["/", "/rpc", "/rpc/"]);
 const MAX_TELEMETRY_BYTES = 8_192;
 const TELEMETRY_REQUEST_HEADERS = "content-type";
 const RPC_REQUEST_HEADERS = "b3, content-type, traceparent";

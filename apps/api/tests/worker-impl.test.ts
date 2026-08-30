@@ -67,12 +67,14 @@ it.effect("accepts only strict metadata from the authorized customer origin", ()
 it.effect("limits RPC CORS to the configured Studio origin", () =>
   Effect.gen(function* () {
     const handler = yield* makeHandler([]);
-    const allowed = yield* Effect.promise(() =>
-      handler(
-        new Request("https://api.webmcpifier.com/rpc", {
-          headers: { origin: STUDIO_ORIGIN },
-          method: "OPTIONS",
-        }),
+    const allowed = yield* Effect.forEach(["/rpc", "/rpc/"], (path) =>
+      Effect.promise(() =>
+        handler(
+          new Request(`https://api.webmcpifier.com${path}`, {
+            headers: { origin: STUDIO_ORIGIN },
+            method: "OPTIONS",
+          }),
+        ),
       ),
     );
     const denied = yield* Effect.promise(() =>
@@ -84,11 +86,18 @@ it.effect("limits RPC CORS to the configured Studio origin", () =>
       ),
     );
 
-    expect(allowed.status).toBe(204);
-    expect(allowed.headers.get("access-control-allow-origin")).toBe(STUDIO_ORIGIN);
-    expect(allowed.headers.get("access-control-allow-headers")).toBe(
-      "b3, content-type, traceparent",
-    );
+    expect(allowed.map(({ status }) => status)).toEqual([204, 204]);
+    expect(
+      allowed.every(
+        (response) => response.headers.get("access-control-allow-origin") === STUDIO_ORIGIN,
+      ),
+    ).toBe(true);
+    expect(
+      allowed.every(
+        (response) =>
+          response.headers.get("access-control-allow-headers") === "b3, content-type, traceparent",
+      ),
+    ).toBe(true);
     expect(denied.status).toBe(403);
   }),
 );
