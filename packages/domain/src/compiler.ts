@@ -12,6 +12,34 @@ import {
 } from "./schema.ts";
 
 const textEncoder = new TextEncoder();
+const STRICT_DECODING = { onExcessProperty: "error" } as const;
+
+const arraysEqual = (left: ReadonlyArray<string>, right: ReadonlyArray<string>): boolean =>
+  left.length === right.length && left.every((value, index) => value === right[index]);
+
+export const formForDraft = (
+  scan: ScanResult,
+  draft: DraftCapability,
+): SemanticForm | undefined => {
+  const form = scan.forms.find((candidate) => candidate.formId === draft.formId);
+  if (form === undefined) return undefined;
+  const controls = new Map(form.controls.map((control) => [control.name, control]));
+  const boundControls = new Set(draft.parameters.map((parameter) => parameter.controlName));
+  if (form.controls.some((control) => control.required && !boundControls.has(control.name))) {
+    return undefined;
+  }
+  return draft.parameters.every((parameter) => {
+    const control = controls.get(parameter.controlName);
+    return (
+      control !== undefined &&
+      control.kind === parameter.kind &&
+      control.required === parameter.required &&
+      arraysEqual(control.options, parameter.options)
+    );
+  })
+    ? form
+    : undefined;
+};
 
 export const canonicalFormSignature = (form: Omit<SemanticForm, "fingerprint">): string =>
   [
@@ -98,24 +126,16 @@ export const publishCapability = (
 ): Effect.Effect<PublishedCapability, DraftRejected> =>
   Effect.gen(function* () {
     const [scan, draft, inputs] = yield* Effect.all([
-      Schema.decodeUnknownEffect(ScanResult)(untrustedScan),
-      Schema.decodeUnknownEffect(DraftCapability)(untrustedDraft),
-      Schema.decodeUnknownEffect(PublicationInputs)(untrustedInputs),
+      Schema.decodeUnknownEffect(ScanResult)(untrustedScan, STRICT_DECODING),
+      Schema.decodeUnknownEffect(DraftCapability)(untrustedDraft, STRICT_DECODING),
+      Schema.decodeUnknownEffect(PublicationInputs)(untrustedInputs, STRICT_DECODING),
     ]).pipe(
       Effect.mapError(() => new DraftRejected({ message: "The publication request is invalid." })),
     );
-    const form = scan.forms.find((candidate) => candidate.formId === draft.formId);
+    const form = formForDraft(scan, draft);
     if (form === undefined) {
-      return yield* new DraftRejected({ message: "Choose a form from the current inspection." });
-    }
-    const controls = new Map(form.controls.map((control) => [control.name, control]));
-    const hasInvalidBinding = draft.parameters.some((parameter) => {
-      const control = controls.get(parameter.controlName);
-      return control === undefined || control.kind !== parameter.kind;
-    });
-    if (hasInvalidBinding) {
       return yield* new DraftRejected({
-        message: "One or more parameters no longer match the inspected form.",
+        message: "The draft does not match the current inspected form.",
       });
     }
     const config = yield* Schema.decodeUnknownEffect(CapabilityConfig)({

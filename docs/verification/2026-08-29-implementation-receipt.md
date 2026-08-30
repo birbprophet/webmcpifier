@@ -15,13 +15,14 @@ This receipt separates design intent from executed evidence. A checked item need
 | Aggregate proof receipt                               | Yes       | Yes            | Yes   | Yes      | Private UI and `get_proof_summary` both rendered the same `1/1` aggregate          |
 | Full authoring-to-installed public journey            | Yes       | Partial        | Yes   | Yes      | Partial: authoring stopped at the human gate; approved artifact and proof verified |
 | Origin-trial release-input validation                 | Yes       | Yes            | Yes   | No       | Placeholder, malformed, expired, and incorrectly scoped tokens block deployment    |
+| Exact authoring inputs and shared form-contract match | Yes       | Yes            | Yes   | No       | Snake-case schemas, state-owned validation, strict inputs, and drift refusal pass  |
 
 ## Evidence ledger
 
 | Evidence                        | Result  | Artifact                                                                                                                                                     |
 | ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vp run ready`                  | Passed  | 89 files formatted; 57 source files linted/type-checked; 17 test files and 55 tests passed; all workspaces built                                             |
-| Vite+/Vitest caching            | Passed  | Final gate reported 7/11 Vite+ task cache hits and replayed cached Vitest suites                                                                             |
+| `vp run ready`                  | Passed  | 90 files formatted; 57 source files linted/type-checked; 17 test files and 56 tests passed; all workspaces built                                             |
+| Vite+/Vitest caching            | Passed  | Final gate reported 4/11 Vite+ task cache hits, replayed cached Vitest suites, and saved 1.15 seconds                                                        |
 | Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                  |
 | Exact public release            | Passed  | API header reports `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`                                                                                                |
 | Public route policy             | Passed  | `www` 200, demo 200, API reachable, apex 301 to canonical `www`                                                                                              |

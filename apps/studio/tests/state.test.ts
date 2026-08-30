@@ -103,7 +103,8 @@ const proof = Schema.decodeUnknownSync(ProofSummary)({
 const initialModel = init({ _tag: "Studio" }).model;
 
 const defineModel = update(initialModel, Message.CompletedInspection({ scan })).model;
-const approveModel = update(defineModel, Message.AgentValidatedCapability({ draft })).model;
+const draftedModel = update(defineModel, Message.AgentDraftedCapability({ draft })).model;
+const approveModel = update(draftedModel, Message.AgentRequestedValidation()).model;
 
 it("moves from Inspect to Define after a completed inspection", () => {
   expect(initialModel.state._tag).toBe("Inspect");
@@ -124,7 +125,7 @@ it("moves from Inspect to Define after a completed inspection", () => {
 });
 
 it("validates a matching draft into Approve without publishing it", () => {
-  const validated = update(defineModel, Message.AgentValidatedCapability({ draft }));
+  const validated = update(draftedModel, Message.AgentRequestedValidation());
   expect(validated.commands).toBeUndefined();
   expect(validated.model.state._tag).toBe("Approve");
   expect("published" in validated.model.state).toBe(false);
@@ -135,7 +136,7 @@ it("allows only the human approval message to issue publication", () => {
   expect(premature.commands).toBeUndefined();
   expect(premature.model.state._tag).toBe("Define");
 
-  const agentValidation = update(defineModel, Message.AgentValidatedCapability({ draft }));
+  const agentValidation = update(draftedModel, Message.AgentRequestedValidation());
   expect(agentValidation.commands).toBeUndefined();
   expect(agentValidation.model.state._tag).toBe("Approve");
 
@@ -146,10 +147,16 @@ it("allows only the human approval message to issue publication", () => {
 });
 
 it("keeps revision agent-owned but publication human-owned", () => {
-  const revised = update(approveModel, Message.AgentRevisedCapability({ draft }));
+  const revised = update(
+    approveModel,
+    Message.AgentRevisedCapability({ changes: { title: "Revised contact form" } }),
+  );
   expect(revised.commands).toBeUndefined();
   expect(revised.model.state._tag).toBe("Define");
   expect("published" in revised.model.state).toBe(false);
+  expect(revised.model.state).toMatchObject({
+    draft: { description: draft.description, title: "Revised contact form" },
+  });
 });
 
 it("creates installation artifacts only after publication completes", () => {

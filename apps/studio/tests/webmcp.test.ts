@@ -146,3 +146,87 @@ it("uses a closed object schema for tools with no arguments", async () => {
   ).rejects.toThrow();
   registration.controller.abort();
 });
+
+it("exposes the exact snake-case authoring contract and validates the current draft", async () => {
+  const inspectRegistrations: Array<{
+    readonly signal: AbortSignal | undefined;
+    readonly tool: ModelContextTool;
+  }> = [];
+  const inspectRegistration = registerStateTools(
+    { _tag: "Inspect" },
+    recordingModelContext(inspectRegistrations),
+    () => undefined,
+  );
+  await inspectRegistration.ready;
+  const inspect = inspectRegistrations[0]?.tool;
+  expect(inspect?.inputSchema).toHaveProperty("properties.safety_boundary");
+  expect(inspect?.inputSchema).toHaveProperty("required", ["safety_boundary", "task", "url"]);
+  inspectRegistration.controller.abort();
+
+  const messages: Array<unknown> = [];
+  const defineRegistrations: Array<{
+    readonly signal: AbortSignal | undefined;
+    readonly tool: ModelContextTool;
+  }> = [];
+  const defineRegistration = registerStateTools(
+    { _tag: "Define" },
+    recordingModelContext(defineRegistrations),
+    (message) => messages.push(message),
+  );
+  await defineRegistration.ready;
+  const draft = defineRegistrations.find(({ tool }) => tool.name === "draft_form_tool")?.tool;
+  const revise = defineRegistrations.find(({ tool }) => tool.name === "revise_form_tool")?.tool;
+  const validate = defineRegistrations.find(({ tool }) => tool.name === "validate_draft")?.tool;
+
+  expect(draft?.inputSchema).toHaveProperty("properties.form_id");
+  expect(draft?.inputSchema).toHaveProperty("properties.submit_policy");
+  expect(draft?.inputSchema).toHaveProperty("properties.parameters.items.properties.control_name");
+  expect(draft?.inputSchema).not.toHaveProperty("properties.annotations");
+  expect(validate?.inputSchema).toEqual({ additionalProperties: false, type: "object" });
+
+  await expect(
+    draft?.execute({
+      description: "Fill the contact form and leave it ready for review.",
+      form_id: "contact",
+      name: "fill_contact",
+      parameters: [
+        {
+          control_name: "email",
+          description: "The email to place in the approved control.",
+          kind: "email",
+          name: "email",
+          options: [],
+          required: true,
+          title: "Work email",
+        },
+      ],
+      submit_policy: "fill_for_review",
+      title: "Fill contact form",
+    }),
+  ).resolves.toMatchObject({ draftReceived: true, publicationCreated: false });
+  expect(messages[0]).toMatchObject({
+    _tag: "AgentDraftedCapability",
+    draft: {
+      annotations: { readOnlyHint: false, untrustedContentHint: false },
+      formId: "contact",
+      submitPolicy: "fill_for_review",
+    },
+  });
+
+  await expect(revise?.execute({ title: "Revised contact form" })).resolves.toMatchObject({
+    publicationCreated: false,
+    revisionReceived: true,
+  });
+  expect(messages[1]).toMatchObject({
+    _tag: "AgentRevisedCapability",
+    changes: { title: "Revised contact form" },
+  });
+
+  await expect(validate?.execute({})).resolves.toMatchObject({
+    publicationCreated: false,
+    validationRequested: true,
+  });
+  expect(messages[2]).toMatchObject({ _tag: "AgentRequestedValidation" });
+  await expect(validate?.execute({ unexpected: true })).rejects.toThrow();
+  defineRegistration.controller.abort();
+});

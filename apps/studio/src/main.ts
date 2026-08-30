@@ -2,6 +2,8 @@ import type { Success } from "effect/Layer";
 import {
   ControlKind,
   DraftCapability,
+  DraftCapabilityChanges,
+  formForDraft,
   NonBlankString,
   ParameterName,
   ProofSummary,
@@ -136,8 +138,8 @@ export type StudioFlags = typeof StudioFlags.Type;
 
 export const Message = defineMessageUnion({
   AgentDraftedCapability: { draft: DraftCapability },
-  AgentRevisedCapability: { draft: DraftCapability },
-  AgentValidatedCapability: { draft: DraftCapability },
+  AgentRequestedValidation: {},
+  AgentRevisedCapability: { changes: DraftCapabilityChanges },
   ChangedDraftDescription: { value: Schema.String },
   ChangedDraftName: { value: Schema.String },
   ChangedDraftTitle: { value: Schema.String },
@@ -300,32 +302,21 @@ export const draftForForm = (form: SemanticForm): DraftEditor => ({
   title: DEFAULT_TOOL_TITLE,
 });
 
-const defineState = (scan: typeof ScanResult.Type, draft: DraftEditor): StudioState => ({
+const defineState = (
+  scan: typeof ScanResult.Type,
+  draft: DraftEditor,
+): typeof DefineState.Type => ({
   _tag: "Define",
   draft,
   error: Option.none(),
   scan,
 });
 
-const draftMatchesScan = (
-  scan: typeof ScanResult.Type,
-  draft: typeof DraftCapability.Type,
-): boolean => {
-  const form = scan.forms.find((candidate) => candidate.formId === draft.formId);
-  if (form === undefined) {
-    return false;
-  }
-  const controls = new Map(form.controls.map((control) => [control.name, control]));
-  return draft.parameters.every((parameter) => {
-    const control = controls.get(parameter.controlName);
-    return control !== undefined && control.kind === parameter.kind;
-  });
-};
-
 const approvedState = (scan: typeof ScanResult.Type, candidate: unknown): StudioState | undefined =>
   Option.getOrUndefined(
-    Option.filter(Schema.decodeUnknownOption(DraftCapability)(candidate), (draft) =>
-      draftMatchesScan(scan, draft),
+    Option.filter(
+      Schema.decodeUnknownOption(DraftCapability)(candidate),
+      (draft) => formForDraft(scan, draft) !== undefined,
     ).pipe(
       Option.map((draft): StudioState => ({
         _tag: "Approve",
@@ -346,9 +337,21 @@ const replaceDraft = (
   state: typeof DefineState.Type,
   draft: typeof DraftCapability.Type,
 ): StudioState =>
-  draftMatchesScan(state.scan, draft)
+  formForDraft(state.scan, draft) !== undefined
     ? { ...state, draft, error: Option.none() }
     : invalidDraftState(state);
+
+const reviseDraft = (
+  scan: typeof ScanResult.Type,
+  current: DraftEditor,
+  changes: typeof DraftCapabilityChanges.Type,
+): StudioState => {
+  const candidate = { ...current, ...changes };
+  const draft = Option.getOrUndefined(Schema.decodeUnknownOption(DraftCapability)(candidate));
+  return draft === undefined || formForDraft(scan, draft) === undefined
+    ? invalidDraftState(defineState(scan, candidate))
+    : defineState(scan, draft);
+};
 
 const changeEditor = (
   state: typeof DefineState.Type,
@@ -440,22 +443,19 @@ export const update = (model: Model, message: Message): StudioUpdate =>
         state: model.state._tag === "Define" ? replaceDraft(model.state, draft) : model.state,
       },
     }),
-    AgentRevisedCapability: ({ draft }) => ({
+    AgentRequestedValidation: () => ({
       model: {
-        state:
-          model.state._tag === "Define"
-            ? replaceDraft(model.state, draft)
-            : model.state._tag === "Approve" && draftMatchesScan(model.state.scan, draft)
-              ? defineState(model.state.scan, draft)
-              : model.state,
+        state: model.state._tag === "Define" ? validateCurrentDraft(model.state) : model.state,
       },
     }),
-    AgentValidatedCapability: ({ draft }) => ({
+    AgentRevisedCapability: ({ changes }) => ({
       model: {
         state:
           model.state._tag === "Define"
-            ? (approvedState(model.state.scan, draft) ?? invalidDraftState(model.state))
-            : model.state,
+            ? reviseDraft(model.state.scan, model.state.draft, changes)
+            : model.state._tag === "Approve"
+              ? reviseDraft(model.state.scan, model.state.draft, changes)
+              : model.state,
       },
     }),
     ChangedDraftDescription: ({ value }) => ({

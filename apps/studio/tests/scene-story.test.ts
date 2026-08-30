@@ -100,7 +100,8 @@ const proof: ProofSummary = {
 
 const inspect = init({ _tag: "Studio" }).model;
 const define = update(inspect, Message.CompletedInspection({ scan })).model;
-const approve = update(define, Message.AgentValidatedCapability({ draft })).model;
+const drafted = update(define, Message.AgentDraftedCapability({ draft })).model;
+const approve = update(drafted, Message.AgentRequestedValidation()).model;
 const install = update(approve, Message.CompletedPublication({ published })).model;
 const loadingProof = update(install, Message.ClickedViewProof()).model;
 const prove = update(loadingProof, Message.CompletedProofSummary({ proof })).model;

@@ -53,14 +53,14 @@ The submission capture starts from the same demo without its generated tag, then
 
 The scanner and script tag are supporting mechanisms. The product's differentiator is recursive authoring: the browser agent uses WebMCP to create a reviewed WebMCP capability for another site. The visible studio mirrors those tool calls rather than embedding another chat or model.
 
-The current authoring surface is state-scoped:
+The current authoring surface is state-scoped and uses closed snake-case inputs:
 
-- `inspect_site`
-- `draft_form_tool`
-- `revise_form_tool`
-- `validate_draft`
-- `get_install_skill`
-- `get_proof_summary`
+- `inspect_site({ url, task, safety_boundary })`
+- `draft_form_tool({ form_id, name, title, description, parameters, submit_policy })`
+- `revise_form_tool({ ...changes })`
+- `validate_draft({})`
+- `get_install_skill({ stack_hint? })`
+- `get_proof_summary({})`
 
 Only tools relevant to the current studio state are registered. Each state owns an `AbortController`; leaving it aborts those registrations before the next disjoint set is registered. Inventory output is marked as untrusted third-party content, while names and descriptions remain controlled by WebMCPifier.
 

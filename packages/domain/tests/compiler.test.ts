@@ -15,6 +15,13 @@ const scan: ScanResult = {
           options: ["plumbing"],
           required: true,
         },
+        {
+          kind: "text",
+          label: "Postcode",
+          name: "postcode",
+          options: [],
+          required: true,
+        },
       ],
       fingerprint: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       formId: "quote-form",
@@ -43,22 +50,35 @@ const draft: DraftCapability = {
       required: true,
       title: "Service",
     },
+    {
+      controlName: "postcode",
+      description: "Postcode for the service address.",
+      kind: "text",
+      name: "postcode",
+      options: [],
+      required: true,
+      title: "Postcode",
+    },
   ],
   submitPolicy: "fill_for_review",
   title: "Prepare service quote",
 };
 
+const publicationInputs = {
+  apiOrigin: "https://api.webmcpifier.com",
+  capabilityId: "cap_test",
+  originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+  readToken: "read-token",
+  runtimeIntegrity: "sha384-dGVzdA==",
+  studioOrigin: "https://webmcpifier.com",
+  writeToken: "write-token",
+} as const;
+
+const publish = (candidate: unknown) => publishCapability(scan, candidate, publicationInputs);
+
 it.effect("publishes only a matching inspected form", () =>
   Effect.gen(function* () {
-    const published = yield* publishCapability(scan, draft, {
-      apiOrigin: "https://api.webmcpifier.com",
-      capabilityId: "cap_test",
-      originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
-      readToken: "read-token",
-      runtimeIntegrity: "sha384-dGVzdA==",
-      studioOrigin: "https://webmcpifier.com",
-      writeToken: "write-token",
-    });
+    const published = yield* publish(draft);
     expect(published.config.target.formId).toBe("quote-form");
     expect(published.scriptTag).toContain("data-webmcpifier=");
     expect(published.installSkill).toContain("Stop and ask the user");
@@ -68,23 +88,22 @@ it.effect("publishes only a matching inspected form", () =>
   }),
 );
 
-it.effect("rejects a stale binding", () =>
+it.effect("rejects stale, altered, or incomplete form bindings", () =>
   Effect.gen(function* () {
-    const invalidDraft: DraftCapability = {
-      ...draft,
-      parameters: [{ ...draft.parameters[0]!, controlName: "missing" }],
-    };
-    const result = yield* Effect.exit(
-      publishCapability(scan, invalidDraft, {
-        apiOrigin: "https://api.webmcpifier.com",
-        capabilityId: "cap_test",
-        originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
-        readToken: "read-token",
-        runtimeIntegrity: "sha384-dGVzdA==",
-        studioOrigin: "https://webmcpifier.com",
-        writeToken: "write-token",
+    const service = draft.parameters[0]!;
+    const postcode = draft.parameters[1]!;
+    const invalidDrafts: ReadonlyArray<unknown> = [
+      { ...draft, parameters: [{ ...service, controlName: "missing" }, postcode] },
+      { ...draft, parameters: [{ ...service, options: ["electrical"] }, postcode] },
+      { ...draft, parameters: [{ ...service, required: false }, postcode] },
+      { ...draft, parameters: [service] },
+      { ...draft, unexpected: true },
+    ];
+    yield* Effect.forEach(invalidDrafts, (invalidDraft) =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(publish(invalidDraft));
+        expect(result._tag).toBe("Failure");
       }),
     );
-    expect(result._tag).toBe("Failure");
   }),
 );

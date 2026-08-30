@@ -1,9 +1,12 @@
 import {
   DraftCapability,
+  DraftCapabilityChanges,
   NonBlankString,
   ProofSummaryRequest,
+  SCAN_LIMITS,
   ScanRequest,
   type ScanResult,
+  ToolParameter,
 } from "@webmcpifier/domain";
 import * as Effect from "effect/Effect";
 import * as Queue from "effect/Queue";
@@ -41,10 +44,40 @@ interface WebMcpDocument extends Document {
 }
 
 const AgentInspectInput = Schema.Struct({
+  safety_boundary: ScanRequest.fields.safetyBoundary,
   task: ScanRequest.fields.task,
   url: ScanRequest.fields.url,
 });
 
+const AgentToolParameterInput = Schema.Struct({
+  control_name: ToolParameter.fields.controlName,
+  description: ToolParameter.fields.description,
+  kind: ToolParameter.fields.kind,
+  name: ToolParameter.fields.name,
+  options: ToolParameter.fields.options,
+  required: ToolParameter.fields.required,
+  title: ToolParameter.fields.title,
+});
+const AgentToolParametersInput = Schema.Array(AgentToolParameterInput).check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(SCAN_LIMITS.controls),
+);
+const AgentDraftInput = Schema.Struct({
+  description: DraftCapability.fields.description,
+  form_id: DraftCapability.fields.formId,
+  name: DraftCapability.fields.name,
+  parameters: AgentToolParametersInput,
+  submit_policy: DraftCapability.fields.submitPolicy,
+  title: DraftCapability.fields.title,
+});
+const AgentDraftChangesInput = Schema.Struct({
+  description: Schema.optional(AgentDraftInput.fields.description),
+  form_id: Schema.optional(AgentDraftInput.fields.form_id),
+  name: Schema.optional(AgentDraftInput.fields.name),
+  parameters: Schema.optional(AgentDraftInput.fields.parameters),
+  submit_policy: Schema.optional(AgentDraftInput.fields.submit_policy),
+  title: Schema.optional(AgentDraftInput.fields.title),
+});
 const EmptyInput = Schema.Record(Schema.String, Schema.Never);
 const InstallSkillInput = Schema.Struct({
   stack_hint: Schema.optional(NonBlankString),
@@ -68,6 +101,7 @@ const executionSignal = (
 const MODEL_CONTEXT_REGISTRATION_FAILED = "Browser-agent actions could not be registered.";
 const AGENT_INSPECTION_FAILED = "The browser-agent inspection failed.";
 const AGENT_PROOF_FAILED = "The browser-agent proof refresh failed.";
+const STRICT_DECODING = { onExcessProperty: "error" } as const;
 
 const inputSchema = (schema: Schema.Top): Record<string, unknown> => {
   const generated = Schema.toJsonSchemaDocument(schema, { additionalProperties: false });
@@ -79,9 +113,52 @@ const inputSchema = (schema: Schema.Top): Record<string, unknown> => {
 const decodeInput = <S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
   input: object,
-): S["Type"] => Schema.decodeUnknownSync(schema)(input);
+): S["Type"] => Schema.decodeUnknownSync(schema, STRICT_DECODING)(input);
 
-const inventoryOutput = (scan: ScanResult) => ({
+const parameterFromAgent = (
+  input: typeof AgentToolParameterInput.Type,
+): typeof ToolParameter.Type => ({
+  controlName: input.control_name,
+  description: input.description,
+  kind: input.kind,
+  name: input.name,
+  options: input.options,
+  required: input.required,
+  title: input.title,
+});
+
+const draftFromAgent = (input: typeof AgentDraftInput.Type): typeof DraftCapability.Type =>
+  Schema.decodeUnknownSync(
+    DraftCapability,
+    STRICT_DECODING,
+  )({
+    annotations: { readOnlyHint: false, untrustedContentHint: false },
+    description: input.description,
+    formId: input.form_id,
+    name: input.name,
+    parameters: input.parameters.map(parameterFromAgent),
+    submitPolicy: input.submit_policy,
+    title: input.title,
+  });
+
+const changesFromAgent = (
+  input: typeof AgentDraftChangesInput.Type,
+): typeof DraftCapabilityChanges.Type =>
+  Schema.decodeUnknownSync(
+    DraftCapabilityChanges,
+    STRICT_DECODING,
+  )({
+    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.form_id === undefined ? {} : { formId: input.form_id }),
+    ...(input.name === undefined ? {} : { name: input.name }),
+    ...(input.parameters === undefined
+      ? {}
+      : { parameters: input.parameters.map(parameterFromAgent) }),
+    ...(input.submit_policy === undefined ? {} : { submitPolicy: input.submit_policy }),
+    ...(input.title === undefined ? {} : { title: input.title }),
+  });
+
+const inventoryOutput = (scan: ScanResult, safetyBoundary: typeof SAFETY_BOUNDARY) => ({
   forms: scan.forms.map((form) => ({
     controls: form.controls.map((control) => ({
       kind: control.kind,
@@ -99,6 +176,7 @@ const inventoryOutput = (scan: ScanResult) => ({
     title: scan.title,
     url: scan.url,
   },
+  safety_boundary: safetyBoundary,
 });
 
 const inspectTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
@@ -109,14 +187,14 @@ const inspectTool = (dispatch: Dispatch, registrationSignal: AbortSignal): Model
     signal.throwIfAborted();
     const input = decodeInput(AgentInspectInput, inputObject);
     const request = Schema.decodeUnknownSync(ScanRequest)({
-      safetyBoundary: SAFETY_BOUNDARY,
+      safetyBoundary: input.safety_boundary,
       task: input.task,
       url: input.url,
     });
     try {
       const scan = await inspectSiteForAgent(request, signal);
       dispatch(Message.CompletedInspection({ scan }));
-      return inventoryOutput(scan);
+      return inventoryOutput(scan, input.safety_boundary);
     } catch (cause) {
       signal.throwIfAborted();
       dispatch(Message.FailedInspection({ message: AGENT_INSPECTION_FAILED }));
@@ -133,43 +211,43 @@ const draftTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelCo
   description: "Draft a complete fill-for-review form tool contract from the visible inventory.",
   execute: async (inputObject, options) => {
     executionSignal(options, registrationSignal).throwIfAborted();
-    const draft = decodeInput(DraftCapability, inputObject);
+    const draft = draftFromAgent(decodeInput(AgentDraftInput, inputObject));
     dispatch(Message.AgentDraftedCapability({ draft }));
-    return { draftAccepted: true, publicationCreated: false };
+    return { draftReceived: true, publicationCreated: false };
   },
-  inputSchema: inputSchema(DraftCapability),
+  inputSchema: inputSchema(AgentDraftInput),
   name: "draft_form_tool",
   title: "Draft form tool",
 });
 
 const reviseTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: false },
-  description: "Replace the current form tool draft with a complete revised contract.",
+  description: "Apply supplied changes to the visible form tool draft without publishing it.",
   execute: async (inputObject, options) => {
     executionSignal(options, registrationSignal).throwIfAborted();
-    const draft = decodeInput(DraftCapability, inputObject);
-    dispatch(Message.AgentRevisedCapability({ draft }));
-    return { publicationCreated: false, revisionAccepted: true };
+    const changes = changesFromAgent(decodeInput(AgentDraftChangesInput, inputObject));
+    dispatch(Message.AgentRevisedCapability({ changes }));
+    return { publicationCreated: false, revisionReceived: true };
   },
-  inputSchema: inputSchema(DraftCapability),
+  inputSchema: inputSchema(AgentDraftChangesInput),
   name: "revise_form_tool",
   title: "Revise form tool",
 });
 
 const validateTool = (dispatch: Dispatch, registrationSignal: AbortSignal): ModelContextTool => ({
   annotations: { readOnlyHint: false, untrustedContentHint: false },
-  description: "Validate a complete form tool draft and stage it for human approval.",
+  description: "Validate the visible current draft and stage it for human approval.",
   execute: async (inputObject, options) => {
     executionSignal(options, registrationSignal).throwIfAborted();
-    const draft = decodeInput(DraftCapability, inputObject);
-    dispatch(Message.AgentValidatedCapability({ draft }));
+    decodeInput(EmptyInput, inputObject);
+    dispatch(Message.AgentRequestedValidation());
     return {
       publicationCreated: false,
       safetyBoundary: SAFETY_BOUNDARY,
-      reviewRequested: true,
+      validationRequested: true,
     };
   },
-  inputSchema: inputSchema(DraftCapability),
+  inputSchema: inputSchema(EmptyInput),
   name: "validate_draft",
   title: "Validate draft",
 });

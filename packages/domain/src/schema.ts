@@ -300,6 +300,16 @@ export const DraftCapability = Schema.Struct({
 });
 export type DraftCapability = typeof DraftCapability.Type;
 
+export const DraftCapabilityChanges = Schema.Struct({
+  description: Schema.optional(DraftCapability.fields.description),
+  formId: Schema.optional(DraftCapability.fields.formId),
+  name: Schema.optional(DraftCapability.fields.name),
+  parameters: Schema.optional(DraftCapability.fields.parameters),
+  submitPolicy: Schema.optional(DraftCapability.fields.submitPolicy),
+  title: Schema.optional(DraftCapability.fields.title),
+});
+export type DraftCapabilityChanges = typeof DraftCapabilityChanges.Type;
+
 export const CapabilityConfig = Schema.Struct({
   capabilityId: OpaqueToken,
   proof: Schema.Struct({

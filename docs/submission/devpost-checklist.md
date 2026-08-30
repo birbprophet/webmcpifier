@@ -17,7 +17,7 @@
 - [ ] `get_install_skill` returns the real production tag, expected schema, verification prompt, and private receipt.
 - [x] The tag is added to the real demo source and deployed only through Alchemy.
 - [x] The same demo URL then exposes `prepare_service_quote`.
-- [x] The tool fills every fictional value, focuses **Review request**, and produces no submission or network side effect.
+- [x] The tool fills every fictional value, focuses **Review request**, and produces no submission or business-action network side effect; only metadata proof telemetry is sent.
 - [x] The private receipt increments success and the expected latency bucket without recording contact data.
 - [x] The dated implementation receipt contains the public evidence and exact release commit.
 
