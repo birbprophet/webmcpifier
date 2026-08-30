@@ -13,7 +13,7 @@ V1 supports one well-labelled semantic form on one public page. It fills that fo
 - Effect RPC and proof API: [api.webmcpifier.com](https://api.webmcpifier.com)
 - Source: [github.com/birbprophet/webmcpifier](https://github.com/birbprophet/webmcpifier)
 
-The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed installed application release is `43b03fe66ab39e06d0939ed5dbcf1722851f122d`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
+The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed installed application release is `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
 
 The public demo is currently in its installed verification state. Its approved config-bearing tag exposes exactly one `prepare_service_quote` tool that fills the seven-field Northstar form for review and cannot submit it.
 

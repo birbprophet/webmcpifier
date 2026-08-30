@@ -4,9 +4,27 @@ Date: 2026-08-29
 
 This receipt separates design intent from executed evidence. A checked item needs a concrete command, route, or browser artifact; source presence alone is not proof.
 
-## 2026-08-30 approved installed release update
+## 2026-08-30 Untitled UI polish release
 
-The current installed application release is `43b03fe66ab39e06d0939ed5dbcf1722851f122d`. It is pushed to `origin/main`, Alchemy reported that exact SHA, and the API returns it in `x-webmcpifier-release`.
+The current installed application release is `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`. It is pushed to `origin/main`, Alchemy reported that exact SHA, and the API returns it in `x-webmcpifier-release`.
+
+- The receipt no longer uses the marketing metric renderer that supplied an unconditional `100%` trend. It renders truthful absolute totals, a bounded latency distribution, and purpose-specific runtime metadata.
+- Proof substates are explicit: Refreshing, Unavailable, No events, and Live. Long installation artifacts have real expansion controls, and invalid contract fields receive linked guidance plus focus on the first failure.
+- Custom layout code now uses the pinned Untitled UI semantic tokens, radii, shadows, and 1,280 px container. The host override is limited to the WebMCPifier brand ramp and an intentional platform font stack.
+- The requested UI references were reviewed at pinned revisions and recorded in the dated UI polish source review. Untitled UI/FoldKit remains the component and token authority; the standalone Storybook renderer remains deferred pending pin compatibility and a real-Chromium certification gate.
+- `vp run ready` passed 93 formatting checks, lint and type checking across 58 source files, 18 test files with 75 tests, and every workspace build.
+- An adversarial Chromium fixture passed at 320, 390, 767, 768, 1023, and 1024 CSS pixels with no document or component overflow under maximum-length unbroken target, form, control, path, and artifact content.
+- Chromium also proved persistent invalid-field focus and `aria-describedby`, reduced-motion spinner suppression, a non-ignored five-item ordered progress list on mobile, balanced proof statistics, and contained expanded artifacts.
+- Alchemy applied six successful production operations: the Studio and API updated, the demo and runtime remained exact no-ops, and runtime integrity verification passed.
+- The canonical Studio and demo return 200, the apex returns 301 to `www`, and the API reports the exact release SHA. The deployed Studio has one `h1` and no horizontal overflow at 1,265 CSS pixels.
+- The populated private receipt has one `h1`, no horizontal overflow at 790 CSS pixels, a truthful `1 / 1 / 0 / 0 / 100%` aggregate, zero trend arrows, five latency rows, and aligned latency/runtime cards. No additional invocation was created for this UI-only verification.
+- The public demo still exposes exactly `prepare_service_quote`; its semantic form and installed runtime are present, the page has no horizontal overflow, and no human submission marker exists.
+
+No receipt read token, write token, contact value, argument, output, cookie, or query string is recorded in this update. No video was recorded; release verification deliberately preceded filming.
+
+## Historical 2026-08-30 approved installed release update
+
+The preceding installed application release was `43b03fe66ab39e06d0939ed5dbcf1722851f122d`. It was pushed to `origin/main`, Alchemy reported that exact SHA, and the API returned it in `x-webmcpifier-release`.
 
 - The release owner crossed the visible human-only approval gate. `get_install_skill` then returned the production tag, exact closed schema, verification prompt, and a private fragment-bearing receipt URL.
 - The generated tag was added as the single authorized demo-source edit. Its config payload, runtime URL, SRI, CORS mode, and defer flag match the approved artifact.
@@ -48,11 +66,11 @@ At that point, the release owner's approval click, newly generated tag, installe
 
 | Evidence                        | Result  | Artifact                                                                                                                                                        |
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vp run ready`                  | Passed  | 91 files formatted; 57 source files linted/type-checked; 17 test files and 65 tests passed; all workspaces built                                                |
+| `vp run ready`                  | Passed  | 93 files formatted; 58 source files linted/type-checked; 18 test files and 75 tests passed; all workspaces built                                                |
 | Property verification           | Passed  | Native `@effect/vitest` properties cover generated public URLs, tagged private-target failures, text budgets, inventories, fingerprints, and config round trips |
 | Vite+/Vitest caching            | Passed  | Installed-release gate reported 5/11 Vite+ task cache hits, replayed cached Vitest suites, and saved 1.88 seconds                                               |
 | Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                     |
-| Exact public release            | Passed  | API header reports `43b03fe66ab39e06d0939ed5dbcf1722851f122d`                                                                                                   |
+| Exact public release            | Passed  | API header reports `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`                                                                                                   |
 | Public route policy             | Passed  | `www` 200, demo 200, API reachable, apex 301 to canonical `www`                                                                                                 |
 | Runtime SRI and CORS            | Passed  | Live runtime bytes equal the built asset; `Access-Control-Allow-Origin: *`; SRI is `sha384-1r4UkjuZeCOzB0Eo4rXiXvoCW2Og+CH2p3WOQRjWLFyLBzSfqPM7QXfuFpFHZ79f`    |
 | Browser Run inspection          | Passed  | Public `inspect_site` returned Northstar, `/`, `quote-form`, and seven semantic controls                                                                        |
