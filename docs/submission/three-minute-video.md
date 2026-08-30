@@ -2,6 +2,15 @@
 
 Record only real public actions. Trim deployment wait, but do not replace any authoring, approval, installation, tool call, or proof step with a mock.
 
+## Pre-record release sequence
+
+1. Put the registered first-party and third-party WebMCP tokens in the ignored release environment file. Do not print them in logs.
+2. Remove only the previously generated WebMCPifier tag from the demo HTML shell and deploy the clean pre-install state through `vp run deploy --stage prod --env-file .env.release`.
+3. In generic Chrome, verify the Studio has WebMCP and the public demo has no tools. Start the recording from this deployed state.
+4. During the recording, complete authoring and press the human approval control. Use the returned installation skill to add the newly generated tag; never reuse or hand-edit an older tag because the token participates in the capability hash.
+5. Commit the one authorized demo source edit and run the same Alchemy deployment command. Trim only the build/deploy wait from the video.
+6. Complete the installed-tool and private-receipt proof, then freeze the final repository SHA and deployment together.
+
 ## Shot list and narration
 
 ### 0:00-0:15 — Before

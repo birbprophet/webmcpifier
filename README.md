@@ -155,6 +155,8 @@ Any stage other than `prod` stays on `workers.dev`. Stage `prod` binds the three
 
 Deployment rejects placeholders, malformed token envelopes, expired tokens, and a first-party token supplied in the third-party slot (or the reverse). This is structural release-input validation; Chrome remains the authority for token signature, enrollment, revocation, and exact registered-origin matching.
 
+The third-party token is embedded inside each generated capability config and therefore inside its contract hash. Replacing a release token requires a newly approved publication and a newly generated demo tag; do not retain or hand-edit an older tag. The final capture uses two Alchemy deployments: first the real-token release with the demo tag absent, then the exact human-approved tag installed in the demo source.
+
 The deployed release has been browser-verified with the Codex in-app browser's WebMCP support. Real Chrome first-party and third-party origin-trial tokens remain a release-owner input; until those registered tokens replace the current test values, use Chrome's WebMCP testing flag for generic Chrome verification.
 
 ## Scope
