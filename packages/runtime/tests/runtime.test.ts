@@ -7,7 +7,7 @@ import { installRuntime, type RuntimeDependencies } from "../src/runtime.ts";
 interface CapturedTool {
   readonly inputSchema: Record<string, unknown>;
   readonly name: string;
-  execute(input: unknown, options: { readonly signal: AbortSignal }): Promise<unknown>;
+  execute(input: unknown, options?: { readonly signal: AbortSignal }): Promise<unknown>;
 }
 
 interface CapturedRegistration {
@@ -296,6 +296,22 @@ it("registers only after origin-trial injection and fills the semantic form for 
   ]);
   expect(JSON.stringify({ result, telemetry })).not.toContain(input.name);
   expect(JSON.stringify({ result, telemetry })).not.toContain(input.email);
+});
+
+it("uses the registration signal when a browser omits execution options", async () => {
+  const fixture = await createFixture();
+
+  await expect(fixture.registration.tool.execute(input)).resolves.toMatchObject({
+    status: "ready_for_review",
+    submissionRequired: true,
+  });
+  expect((JSON.parse(fixture.proofs[0] ?? "") as { readonly outcome: string }).outcome).toBe(
+    "success",
+  );
+
+  const aborted = await createFixture();
+  aborted.window.dispatchEvent(new aborted.window.Event("pagehide"));
+  await expect(aborted.registration.tool.execute(input)).rejects.toThrow();
 });
 
 it("validates every execution input before mutating the form", async () => {

@@ -18,7 +18,7 @@ interface ModelContextTool {
     readonly untrustedContentHint: boolean;
   };
   readonly description: string;
-  readonly execute: (input: unknown, options: ExecutionOptions) => Promise<unknown>;
+  readonly execute: (input: unknown, options?: ExecutionOptions) => Promise<unknown>;
   readonly inputSchema: Record<string, unknown>;
   readonly name: string;
   readonly title: string;
@@ -119,19 +119,16 @@ const executionFor =
     config: CapabilityConfig,
     form: HTMLFormElement,
     capabilityHash: string,
+    fallbackSignal: AbortSignal,
     dependencies: RuntimeDependencies,
   ): ModelContextTool["execute"] =>
   async (input, options) => {
+    const signal = options?.signal ?? fallbackSignal;
     const startedAt = dependencies.now();
     let outcome: ProofOutcome = "failure";
     try {
-      if (options.signal.aborted) throw options.signal.reason;
-      const updatedFieldCount = fillFormForReview(
-        form,
-        config.tool.parameters,
-        input,
-        options.signal,
-      );
+      if (signal.aborted) throw signal.reason;
+      const updatedFieldCount = fillFormForReview(form, config.tool.parameters, input, signal);
       outcome = "success";
       return {
         status: "ready_for_review",
@@ -139,7 +136,7 @@ const executionFor =
         updatedFieldCount,
       };
     } catch (error) {
-      outcome = options.signal.aborted ? "abort" : "failure";
+      outcome = signal.aborted ? "abort" : "failure";
       throw error;
     } finally {
       const elapsed = dependencies.now() - startedAt;
@@ -173,7 +170,7 @@ export const installRuntime = async (
     {
       annotations: config.tool.annotations,
       description: config.tool.description,
-      execute: executionFor(config, form, capabilityHash, dependencies),
+      execute: executionFor(config, form, capabilityHash, registration.signal, dependencies),
       inputSchema: inputSchemaFor(config.tool.parameters),
       name: config.tool.name,
       title: config.tool.title,
