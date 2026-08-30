@@ -12,7 +12,6 @@
     "test": "vp run -r test",
     "dev": "vp run studio#dev",
     "dev:stack": "alchemy dev",
-    "deploy": "alchemy deploy",
     "prepare": "vp config"
   },
   "devDependencies": {

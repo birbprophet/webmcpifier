@@ -34,6 +34,12 @@ export default defineConfig({
   },
   run: {
     cache: true,
+    tasks: {
+      deploy: {
+        cache: false,
+        command: "alchemy deploy",
+      },
+    },
   },
   test: {
     env: studioTestEnvironment,
