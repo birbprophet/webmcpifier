@@ -19,22 +19,23 @@ This receipt separates design intent from executed evidence. A checked item need
 
 ## Evidence ledger
 
-| Evidence                        | Result  | Artifact                                                                                                                                                     |
-| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vp run ready`                  | Passed  | 90 files formatted; 57 source files linted/type-checked; 17 test files and 56 tests passed; all workspaces built                                             |
-| Vite+/Vitest caching            | Passed  | Final gate reported 4/11 Vite+ task cache hits, replayed cached Vitest suites, and saved 1.15 seconds                                                        |
-| Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                  |
-| Exact public release            | Passed  | API header reports `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`                                                                                                |
-| Public route policy             | Passed  | `www` 200, demo 200, API reachable, apex 301 to canonical `www`                                                                                              |
-| Runtime SRI and CORS            | Passed  | Live runtime bytes equal the built asset; `Access-Control-Allow-Origin: *`; SRI is `sha384-1r4UkjuZeCOzB0Eo4rXiXvoCW2Og+CH2p3WOQRjWLFyLBzSfqPM7QXfuFpFHZ79f` |
-| Browser Run inspection          | Passed  | Public `inspect_site` returned Northstar, `/`, `quote-form`, and seven semantic controls                                                                     |
-| Public authoring lifecycle      | Passed  | Browser called inspect, draft, and validate; Studio visibly reached approval and replaced tools with revision-only scope                                     |
-| Public installed tool           | Passed  | `prepare_service_quote` discovered with a closed seven-field schema at `https://demo.webmcpifier.com/`                                                       |
-| Public fill-for-review call     | Passed  | Result was `ready_for_review`, `submissionRequired: true`, `updatedFieldCount: 7`; review opened and closed without submission                               |
-| Aggregate proof                 | Passed  | Capability `cap_c04b73f132964dc6b89dd18b525f36f7`: one invocation, one success, zero failures/aborts, ≤100 ms                                                |
-| Contract identity               | Passed  | Hash `0f4f6e2bc11bac980c2c5b7813bb052d3e241f1e08af63dd67b19e3a6e600f6e`, runtime `1.0.0`, exact demo origin                                                  |
-| Public GitHub repository        | Passed  | `birbprophet/webmcpifier` is public, defaults to `main`, and GitHub reports the MIT license                                                                  |
-| Real Chrome origin-trial tokens | Pending | Codex in-app Browser proof passed; registered first-party and third-party Chrome tokens still require the release owner                                      |
+| Evidence                        | Result  | Artifact                                                                                                                                                        |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vp run ready`                  | Passed  | 90 files formatted; 57 source files linted/type-checked; 17 test files and 61 tests passed; all workspaces built                                                |
+| Property verification           | Passed  | Native `@effect/vitest` properties cover generated public URLs, tagged private-target failures, text budgets, inventories, fingerprints, and config round trips |
+| Vite+/Vitest caching            | Passed  | Final gate reported 7/11 Vite+ task cache hits, replayed cached Vitest suites, and saved 3.43 seconds                                                           |
+| Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                     |
+| Exact public release            | Passed  | API header reports `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`                                                                                                   |
+| Public route policy             | Passed  | `www` 200, demo 200, API reachable, apex 301 to canonical `www`                                                                                                 |
+| Runtime SRI and CORS            | Passed  | Live runtime bytes equal the built asset; `Access-Control-Allow-Origin: *`; SRI is `sha384-1r4UkjuZeCOzB0Eo4rXiXvoCW2Og+CH2p3WOQRjWLFyLBzSfqPM7QXfuFpFHZ79f`    |
+| Browser Run inspection          | Passed  | Public `inspect_site` returned Northstar, `/`, `quote-form`, and seven semantic controls                                                                        |
+| Public authoring lifecycle      | Passed  | Browser called inspect, draft, and validate; Studio visibly reached approval and replaced tools with revision-only scope                                        |
+| Public installed tool           | Passed  | `prepare_service_quote` discovered with a closed seven-field schema at `https://demo.webmcpifier.com/`                                                          |
+| Public fill-for-review call     | Passed  | Result was `ready_for_review`, `submissionRequired: true`, `updatedFieldCount: 7`; review opened and closed without submission                                  |
+| Aggregate proof                 | Passed  | Capability `cap_c04b73f132964dc6b89dd18b525f36f7`: one invocation, one success, zero failures/aborts, ≤100 ms                                                   |
+| Contract identity               | Passed  | Hash `0f4f6e2bc11bac980c2c5b7813bb052d3e241f1e08af63dd67b19e3a6e600f6e`, runtime `1.0.0`, exact demo origin                                                     |
+| Public GitHub repository        | Passed  | `birbprophet/webmcpifier` is public, defaults to `main`, and GitHub reports the MIT license                                                                     |
+| Real Chrome origin-trial tokens | Pending | Codex in-app Browser proof passed; registered first-party and third-party Chrome tokens still require the release owner                                         |
 
 The email value is intentionally redacted by the in-app browser's DOM inspection surface. The runtime returned seven updates, the email control reported native validity with no missing/type mismatch, and the page's human review gate opened, which requires the complete form to pass `reportValidity()`. The browser then closed review and observed no `data-human-submitted` marker.
 

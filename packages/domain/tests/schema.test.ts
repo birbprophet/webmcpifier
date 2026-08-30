@@ -1,7 +1,17 @@
 import { expect, it } from "@effect/vitest";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
-import { DraftCapability, ProofEvent, ScanResult } from "../src/schema.ts";
+import * as FastCheck from "effect/testing/FastCheck";
+import { TOOL_LIMITS } from "../src/constants.ts";
+import {
+  DraftCapability,
+  ParameterDescription,
+  ParameterName,
+  ProofEvent,
+  ScanResult,
+  ToolDescription,
+  ToolName,
+} from "../src/schema.ts";
 
 const fingerprint = "0".repeat(64);
 
@@ -94,3 +104,22 @@ it("rejects duplicate tool bindings and malformed proof capability identifiers",
   expect(Option.isNone(Schema.decodeUnknownOption(DraftCapability)(duplicateBindings))).toBe(true);
   expect(Option.isNone(Schema.decodeUnknownOption(ProofEvent)(malformedProofEvent))).toBe(true);
 });
+
+it.prop(
+  "enforces every documented tool text budget",
+  { overflow: FastCheck.integer({ min: 1, max: 100 }) },
+  ({ overflow }) => {
+    const boundedSchemas = [
+      [ToolName, TOOL_LIMITS.name],
+      [ParameterName, TOOL_LIMITS.parameterName],
+      [ToolDescription, TOOL_LIMITS.description],
+      [ParameterDescription, TOOL_LIMITS.parameterDescription],
+    ] as const;
+    for (const [schema, limit] of boundedSchemas) {
+      expect(Option.isSome(Schema.decodeUnknownOption(schema)("a".repeat(limit)))).toBe(true);
+      expect(Option.isNone(Schema.decodeUnknownOption(schema)("a".repeat(limit + overflow)))).toBe(
+        true,
+      );
+    }
+  },
+);

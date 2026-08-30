@@ -1,7 +1,8 @@
 import { expect, it } from "@effect/vitest";
+import * as FastCheck from "effect/testing/FastCheck";
 import { Window } from "happy-dom";
 import { THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN } from "../../../test/origin-trial-token.ts";
-import type { CapabilityConfig } from "../src/config.ts";
+import { type CapabilityConfig, decodeCapabilityConfig } from "../src/config.ts";
 import { fingerprintForm } from "../src/form.ts";
 import { installRuntime, type RuntimeDependencies } from "../src/runtime.ts";
 
@@ -142,6 +143,44 @@ const encodeConfig = (config: CapabilityConfig): string => {
   for (const byte of bytes) binary += String.fromCodePoint(byte);
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 };
+
+it.prop(
+  "round-trips generated capability configurations through the installed decoder",
+  {
+    capabilityId: FastCheck.stringMatching(/^[A-Za-z][A-Za-z0-9_-]{0,15}$/u),
+    pathSegment: FastCheck.stringMatching(/^[a-z][a-z0-9-]{0,15}$/u),
+    toolName: FastCheck.stringMatching(/^[A-Za-z][A-Za-z0-9_.-]{0,15}$/u),
+  },
+  ({ capabilityId, pathSegment, toolName }) => {
+    const config: CapabilityConfig = {
+      capabilityId,
+      proof: {
+        endpoint: "https://api.webmcpifier.com/proof/events",
+        writeToken: "write-token",
+      },
+      runtime: {
+        originTrialToken: THIRD_PARTY_WEBMCP_ORIGIN_TRIAL_TOKEN,
+        version: "1.0.0",
+      },
+      target: {
+        fingerprint: "a".repeat(64),
+        formId: "quote-form",
+        origin: "https://demo.webmcpifier.com",
+        pathname: `/${pathSegment}`,
+      },
+      tool: {
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        description: "Fill a service request for review without submitting it.",
+        name: toolName,
+        parameters,
+        submitPolicy: "fill_for_review",
+        title: "Prepare service quote",
+      },
+      version: 1,
+    };
+    expect(decodeCapabilityConfig(encodeConfig(config))).toEqual(config);
+  },
+);
 
 const createFixture = async (
   mutateConfig: (config: CapabilityConfig) => CapabilityConfig = (config) => config,

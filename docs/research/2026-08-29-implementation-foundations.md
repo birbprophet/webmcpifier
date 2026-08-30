@@ -29,7 +29,7 @@ What is the smallest architecture that can compile one semantic form into a safe
 - Abort state-owned WebMCP registrations before registering the next state's disjoint tool names. Do not implement a compatibility registry.
 - Decode every external value once at its boundary: URLs, DOM inventory, RPC payloads, runtime config, telemetry, and environment.
 - Reject structurally invalid, expired, or incorrectly scoped origin-trial tokens before Alchemy creates resources. Do not claim local cryptographic validation; the browser remains authoritative for signature and registration.
-- Use `@effect/vitest` as the only test import and enable Vite+/Vitest caches where their invalidation model is sound.
+- Use `@effect/vitest` as the only test import, use its native property runner for bounded domain invariants, and enable Vite+/Vitest caches where their invalidation model is sound.
 
 ## Reject
 
