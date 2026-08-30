@@ -37,6 +37,7 @@ export default defineConfig({
   },
   test: {
     env: studioTestEnvironment,
+    exclude: ["**/.alchemy/**", "**/dist/**", "**/node_modules/**"],
     experimental: {
       fsModuleCache: true,
     },

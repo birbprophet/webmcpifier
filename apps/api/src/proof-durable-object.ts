@@ -30,7 +30,7 @@ const decodeStoredState = (input: unknown) =>
  * on every read so a stale or malformed object cannot be treated as trusted.
  */
 export class CapabilityProof extends Cloudflare.DurableObject<CapabilityProof>()(
-  "CapabilityProof",
+  "PROOF",
   Effect.gen(function* () {
     const state = yield* Cloudflare.DurableObjectState;
 
