@@ -10,7 +10,13 @@ const DnsRecord = Schema.Struct({
 
 type ResolveHost = (hostname: string) => Promise<unknown>;
 
-const denied = (): InvalidTarget =>
+const resolutionFailed = (): InvalidTarget =>
+  new InvalidTarget({ message: "The target hostname could not be resolved safely." });
+
+const invalidResolution = (): InvalidTarget =>
+  new InvalidTarget({ message: "The target hostname returned invalid resolution data." });
+
+const deniedAddress = (): InvalidTarget =>
   new InvalidTarget({ message: "The target hostname does not resolve to a public address." });
 
 const ipv4Octets = (address: string): ReadonlyArray<number> | undefined => {
@@ -58,18 +64,23 @@ export const cloudflarePublicHostResolver = (
   assertPublic: (hostname) =>
     Effect.gen(function* () {
       const name = yield* Schema.decodeUnknownEffect(NonBlankString)(hostname).pipe(
-        Effect.mapError(denied),
+        Effect.mapError(invalidResolution),
       );
-      const records = yield* Effect.tryPromise({ catch: denied, try: () => resolve(name) }).pipe(
+      const records = yield* Effect.tryPromise({
+        catch: resolutionFailed,
+        try: () => resolve(name),
+      }).pipe(
         Effect.flatMap((input) =>
-          Schema.decodeUnknownEffect(Schema.Array(DnsRecord))(input).pipe(Effect.mapError(denied)),
+          Schema.decodeUnknownEffect(Schema.Array(DnsRecord))(input).pipe(
+            Effect.mapError(invalidResolution),
+          ),
         ),
       );
       const addresses = records.flatMap(({ address, type }) =>
         address !== undefined && (type === "A" || type === "AAAA") ? [address] : [],
       );
       if (addresses.length === 0 || addresses.some((address) => !isPublicAddress(address))) {
-        return yield* denied();
+        return yield* deniedAddress();
       }
     }),
 });

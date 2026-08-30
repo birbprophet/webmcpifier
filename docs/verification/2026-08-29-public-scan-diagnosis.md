@@ -1,7 +1,7 @@
 # Public scan diagnosis
 
 Date: 2026-08-29
-State: RootCaused
+State: Reproduced
 
 ## ReproductionReceipt
 
@@ -12,12 +12,12 @@ State: RootCaused
 - Counter-evidence: public A records `104.21.2.26` and `172.67.128.157`, plus globally routed IPv6 records, resolve from both the system resolver and Cloudflare's public resolver.
 - Canonical issue: unavailable because `birbprophet/webmcpifier` does not yet exist on GitHub and the authenticated GitHub session is blocked. This repository receipt is the current authority.
 
-## RootCauseReceipt
+## Investigation update
 
 - The URL parser accepted the target and the live RPC transport succeeded.
-- The failing adapter made HTTP subrequests from a Cloudflare Worker back to Cloudflare's public DNS-over-HTTPS endpoint and collapsed every fetch, response, decode, or answer failure into the same `InvalidTarget` result.
-- The hostname's independently observed records are public, so the adapter rejected a valid target at its Cloudflare-only DNS subrequest seam rather than at IP classification.
-- Cloudflare documents `node:dns` name resolution as a native `nodejs_compat` Worker capability backed by DNS over HTTPS. The API Worker already deploys with that compatibility flag.
-- Correction: replace the extra HTTP DNS client and response protocol with one native `resolveAny` call, Schema-decode its records, and retain the existing public-address classification.
+- The first failing adapter made HTTP subrequests from a Cloudflare Worker back to Cloudflare's public DNS-over-HTTPS endpoint and collapsed every fetch, response, decode, or answer failure into the same `InvalidTarget` result.
+- Replacing that adapter with Cloudflare's documented `node:dns` `resolveAny` capability did not change the public result. That disconfirms the HTTP subrequest itself as a sufficient root cause.
+- The hostname's independently observed records are public, so URL parsing and IP classification remain unlikely causes. The unresolved seam is now the production resolver call versus its Schema-decoded result.
+- Next controlled variable: preserve the generic public safety boundary while assigning distinct deterministic errors to resolver failure, invalid resolver output, and a resolved non-public address. A live replay can then identify the failing stage without exposing DNS data.
 - Affected scope: deployed scanning only. Pure URL and IP classification, fixture extraction, publication, runtime, proof storage, studio, and demo are unaffected.
-- Confidence: high for the causal seam; the collapsed production error intentionally does not reveal which internal HTTP-DNS sub-step failed.
+- Confidence: high that the resolver adapter is the causal seam; root cause inside that seam is not yet established.
