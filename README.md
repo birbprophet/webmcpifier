@@ -11,22 +11,38 @@ V1 supports one well-labelled semantic form on one public page. It fills that fo
 - Studio: [www.webmcpifier.com](https://www.webmcpifier.com)
 - Customer demo: [demo.webmcpifier.com](https://demo.webmcpifier.com)
 - Effect RPC and proof API: [api.webmcpifier.com](https://api.webmcpifier.com)
+- Source: [github.com/birbprophet/webmcpifier](https://github.com/birbprophet/webmcpifier)
 
-The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the exact release SHA and verification state; a URL in this list is not, by itself, evidence that a journey passed.
+The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed application release is `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
 
-## Three-minute test
+The public demo is intentionally frozen in its installed state so judges can discover and call the final tool. The pre-install state, where the same page exposes no tools, is captured separately for the narrated submission flow.
+
+## Public smoke test
 
 Use ChatGPT's in-app browser or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled.
 
-1. Open the customer demo and ask: `What WebMCP tools does this page expose?`
-2. Open the studio and ask:
+1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm `prepare_service_quote` has a closed seven-field schema.
+2. Ask:
+
+   > Prepare a plumbing service quote for Alex Chen at alex@example.test. It is urgent, for a house, postcode TEST 1AA, and the details are: Demonstration leak under the kitchen sink. Do not submit it.
+
+3. Confirm the page URL did not change, all seven fields pass native validity, focus is on **Review request**, and no submission confirmation exists. Opening and closing **Review request** is safe; do not press **Send request**.
+4. Open the Studio in a clean tab and ask:
 
    > Inspect https://demo.webmcpifier.com and draft a tool named prepare_service_quote that fills the service quote for review and never submits it.
 
-3. Review the visible contract and press **Approve capability** yourself. The browser agent cannot cross this gate.
+5. Confirm the agent calls `inspect_site`, `draft_form_tool`, and `validate_draft`; the Studio must stop on the visible approval contract. Only `revise_form_tool` remains exposed at that point, and no installation artifact exists.
+
+## Narrated build flow
+
+The submission capture starts from the same demo without its generated tag, then records this complete transition:
+
+1. Show that the customer page exposes no WebMCP tools.
+2. Run the authoring prompt above and show the Studio's rendered inspection, semantic inventory, contract, and safety boundary.
+3. Press **Approve capability** yourself. The browser agent cannot cross this gate.
 4. Ask: `Give me the installation skill for the approved capability.`
-5. Add the returned tag to the demo HTML shell and deploy through the repository's existing Alchemy command.
-6. Reopen the public demo and ask:
+5. Add only the returned tag to the demo HTML shell and deploy through the repository's existing Alchemy command.
+6. Reopen the same public demo and ask:
 
    > Prepare a plumbing service quote for Alex Chen at alex@example.test. It is urgent, for a house, postcode TEST 1AA, and the details are: Demonstration leak under the kitchen sink. Do not submit it.
 
@@ -136,6 +152,8 @@ Copy `.env.example` to a private ignored file and fill it before deploying. Alch
 The same private file must provide Alchemy's `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The repository exposes names and scopes only; never commit their values.
 
 Any stage other than `prod` stays on `workers.dev`. Stage `prod` binds the three production hostnames and the apex redirect. The public first-party and third-party origin-trial tokens must match their registered origins; they are browser activation tokens, not private API credentials.
+
+The deployed release has been browser-verified with the Codex in-app browser's WebMCP support. Real Chrome first-party and third-party origin-trial tokens remain a release-owner input; until those registered tokens replace the current test values, use Chrome's WebMCP testing flag for generic Chrome verification.
 
 ## Scope
 

@@ -4,22 +4,22 @@
 
 - [ ] Public MIT repository is `https://github.com/birbprophet/webmcpifier`.
 - [ ] Repository default branch and production deployment are frozen on the declared release commit.
-- [ ] `https://www.webmcpifier.com`, `https://demo.webmcpifier.com`, and `https://api.webmcpifier.com` pass live route checks.
-- [ ] `https://webmcpifier.com` permanently redirects to the canonical `www` origin.
+- [x] `https://www.webmcpifier.com`, `https://demo.webmcpifier.com`, and `https://api.webmcpifier.com` pass live route checks.
+- [x] `https://webmcpifier.com` permanently redirects to the canonical `www` origin.
 - [ ] First-party and third-party WebMCP origin-trial registrations are active on the intended origins.
-- [ ] README testing prompts, browser requirements, architecture, safety boundary, differentiation, release evidence, and MIT license are public.
+- [x] README testing prompts, browser requirements, architecture, safety boundary, differentiation, release evidence, and MIT license are present locally.
 
 ## Real journey evidence
 
 - [ ] The public demo initially exposes no WebMCP tools.
-- [ ] The browser agent completes Inspect, Define, and Validate using WebMCPifier's WebMCP tools.
+- [x] The browser agent completes Inspect, Define, and Validate using WebMCPifier's WebMCP tools.
 - [ ] Only the human **Approve capability** click creates installation artifacts.
 - [ ] `get_install_skill` returns the real production tag, expected schema, verification prompt, and private receipt.
-- [ ] The tag is added to the real demo source and deployed only through Alchemy.
-- [ ] The same demo URL then exposes `prepare_service_quote`.
-- [ ] The tool fills every fictional value, focuses **Review request**, and produces no submission or network side effect.
-- [ ] The private receipt increments success and the expected latency bucket without recording contact data.
-- [ ] The dated implementation receipt contains the public evidence and exact release commit.
+- [x] The tag is added to the real demo source and deployed only through Alchemy.
+- [x] The same demo URL then exposes `prepare_service_quote`.
+- [x] The tool fills every fictional value, focuses **Review request**, and produces no submission or network side effect.
+- [x] The private receipt increments success and the expected latency bucket without recording contact data.
+- [x] The dated implementation receipt contains the public evidence and exact release commit.
 
 ## Devpost and video
 
@@ -33,3 +33,5 @@
 - [ ] Confirm the solo Singapore-based entrant and all required Devpost declarations.
 - [ ] Complete any platform attestations that cannot be automated.
 - [ ] Freeze both deployment and repository at least 24 hours before the September 3 deadline; make no post-deadline edits.
+
+Checked items have dated evidence in `docs/verification/2026-08-29-implementation-receipt.md`. Unchecked items require the release owner's GitHub, Chrome origin-trial, approval, recording, or Devpost action and must not be inferred from local tests.

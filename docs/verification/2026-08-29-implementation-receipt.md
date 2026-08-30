@@ -4,31 +4,36 @@ Date: 2026-08-29
 
 This receipt separates design intent from executed evidence. A checked item needs a concrete command, route, or browser artifact; source presence alone is not proof.
 
-| Contract                                              | Specified | Locally tested | Built | Deployed       | Browser verified          |
-| ----------------------------------------------------- | --------- | -------------- | ----- | -------------- | ------------------------- |
-| Public HTTPS target policy                            | Yes       | Yes            | Yes   | Not applicable | Test fixtures only        |
-| Semantic form inventory and fingerprint               | Yes       | Yes            | Yes   | Pending        | Local demo inventory      |
-| Human-only approval gate                              | Yes       | Yes            | Yes   | Pending        | Local studio UI           |
-| State-scoped WebMCP authoring tools                   | Yes       | Yes            | Yes   | Pending        | Local WebMCP tool updates |
-| Config-bearing runtime tag                            | Yes       | Yes            | Yes   | Pending        | Pending public journey    |
-| Fill-for-review runtime with zero submit side effects | Yes       | Yes            | Yes   | Pending        | Runtime fixture only      |
-| Aggregate proof receipt                               | Yes       | Yes            | Yes   | Pending        | Local receipt route       |
-| Full authoring-to-installed public journey            | Yes       | Partial        | Yes   | Pending        | Pending public journey    |
+| Contract                                              | Specified | Locally tested | Built | Deployed | Browser verified                                                                   |
+| ----------------------------------------------------- | --------- | -------------- | ----- | -------- | ---------------------------------------------------------------------------------- |
+| Public HTTPS target policy                            | Yes       | Yes            | Yes   | Yes      | Live public demo accepted through Browser Run                                      |
+| Semantic form inventory and fingerprint               | Yes       | Yes            | Yes   | Yes      | Seven controls and the stable `quote-form` inventory returned through WebMCP       |
+| Human-only approval gate                              | Yes       | Yes            | Yes   | Yes      | Public Studio stopped at approval; no artifact existed and only revision remained  |
+| State-scoped WebMCP authoring tools                   | Yes       | Yes            | Yes   | Yes      | `inspect_site` → draft/validate → revision-only tool replacement observed          |
+| Config-bearing runtime tag                            | Yes       | Yes            | Yes   | Yes      | Final SRI runtime registered `prepare_service_quote` on the public demo            |
+| Fill-for-review runtime with zero submit side effects | Yes       | Yes            | Yes   | Yes      | Seven updates, review focus, valid review gate, unchanged URL, no submission       |
+| Aggregate proof receipt                               | Yes       | Yes            | Yes   | Yes      | Private UI and `get_proof_summary` both rendered the same `1/1` aggregate          |
+| Full authoring-to-installed public journey            | Yes       | Partial        | Yes   | Yes      | Partial: authoring stopped at the human gate; approved artifact and proof verified |
 
 ## Evidence ledger
 
-| Evidence                       | Result  | Artifact                                                                                            |
-| ------------------------------ | ------- | --------------------------------------------------------------------------------------------------- |
-| `vp run ready`                 | Passed  | 55 checked source files; 16 test files and 50 tests passed; domain, runtime, demo, Studio built     |
-| Hosting policy assets          | Passed  | Studio and demo builds contain `_headers` with origin isolation and `tools=(self)`                  |
-| Alchemy production dry-run     | Passed  | Five resources planned; Browser Run, Durable Object, Worker, demo, Studio, and build edges resolved |
-| Runtime SRI guard              | Passed  | Exact SHA-384 accepted; deliberately wrong integrity exited nonzero before deployment               |
-| Local Studio route             | Passed  | `http://localhost:4174`: responsive Inspect UI, no console errors, state-scoped WebMCP tools        |
-| Local demo before installation | Passed  | `http://localhost:4173`: one semantic form, no installed tag, no WebMCP tools                       |
-| Local receipt route            | Passed  | Receipt deep link booted the Prove state and exposed only `get_proof_summary`                       |
-| Demo route after installation  | Pending | Public tool inventory capture                                                                       |
-| `prepare_service_quote` call   | Pending | Public completed-form capture with no submission                                                    |
-| Receipt update                 | Pending | Private public receipt capture                                                                      |
-| Release commit                 | Pending | Full Git SHA and public repository URL                                                              |
+| Evidence                        | Result  | Artifact                                                                                                                                                     |
+| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vp run ready`                  | Passed  | 87 files formatted; 56 source files linted/type-checked; 17 test files and 54 tests passed; all workspaces built                                             |
+| Vite+/Vitest caching            | Passed  | Final gate reported 7/11 Vite+ task cache hits and replayed cached Vitest suites                                                                             |
+| Alchemy production deployment   | Passed  | `Alchemy.run` deployed API, demo, Studio, Browser Run binding, Durable Object, custom domains, and redirect                                                  |
+| Exact public release            | Passed  | API header reports `aa0a40017c30acfe51a6e98c39ca0b30ec4640e5`                                                                                                |
+| Public route policy             | Passed  | `www` 200, demo 200, API reachable, apex 301 to canonical `www`                                                                                              |
+| Runtime SRI and CORS            | Passed  | Live runtime bytes equal the built asset; `Access-Control-Allow-Origin: *`; SRI is `sha384-1r4UkjuZeCOzB0Eo4rXiXvoCW2Og+CH2p3WOQRjWLFyLBzSfqPM7QXfuFpFHZ79f` |
+| Browser Run inspection          | Passed  | Public `inspect_site` returned Northstar, `/`, `quote-form`, and seven semantic controls                                                                     |
+| Public authoring lifecycle      | Passed  | Browser called inspect, draft, and validate; Studio visibly reached approval and replaced tools with revision-only scope                                     |
+| Public installed tool           | Passed  | `prepare_service_quote` discovered with a closed seven-field schema at `https://demo.webmcpifier.com/`                                                       |
+| Public fill-for-review call     | Passed  | Result was `ready_for_review`, `submissionRequired: true`, `updatedFieldCount: 7`; review opened and closed without submission                               |
+| Aggregate proof                 | Passed  | Capability `cap_c04b73f132964dc6b89dd18b525f36f7`: one invocation, one success, zero failures/aborts, ≤100 ms                                                |
+| Contract identity               | Passed  | Hash `0f4f6e2bc11bac980c2c5b7813bb052d3e241f1e08af63dd67b19e3a6e600f6e`, runtime `1.0.0`, exact demo origin                                                  |
+| Public GitHub repository        | Blocked | The intended public repository exists but is empty; the local GitHub CLI token is invalid and SSH authentication is unavailable                              |
+| Real Chrome origin-trial tokens | Pending | Codex in-app Browser proof passed; registered first-party and third-party Chrome tokens still require the release owner                                      |
 
-The local browser checks prove presentation and registration lifecycle, not the Cloudflare Browser Run binding or public origin-trial activation. The installed runtime's value setting, input/change events, stale-form refusal, abort behavior, and zero-submit/network effects are currently fixture-backed test evidence. Public rows remain pending until they are observed on the deployed origins.
+The email value is intentionally redacted by the in-app browser's DOM inspection surface. The runtime returned seven updates, the email control reported native validity with no missing/type mismatch, and the page's human review gate opened, which requires the complete form to pass `reportValidity()`. The browser then closed review and observed no `data-human-submitted` marker.
+
+This public run did not cross the human-only approval button in the fresh authoring session. Publication for the installed artifact was exercised separately through the same Effect RPC publication contract, then installed as the one authorized source edit. A continuous video take still requires the release owner to press approval and perform the final Devpost/YouTube actions.
