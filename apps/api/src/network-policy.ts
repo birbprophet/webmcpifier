@@ -1,21 +1,14 @@
 import { InvalidTarget, NonBlankString } from "@webmcpifier/domain";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import { promises as dns } from "node:dns";
 
-const DNS_ENDPOINT = "https://cloudflare-dns.com/dns-query";
-const DNS_RECORD_TYPES = ["A", "AAAA"] as const;
-
-const DnsResponse = Schema.Struct({
-  Answer: Schema.optional(
-    Schema.Array(
-      Schema.Struct({
-        data: Schema.String,
-        type: Schema.Number,
-      }),
-    ),
-  ),
-  Status: Schema.Number,
+const DnsRecord = Schema.Struct({
+  address: Schema.optional(Schema.String),
+  type: Schema.String,
 });
+
+type ResolveHost = (hostname: string) => Promise<unknown>;
 
 const denied = (): InvalidTarget =>
   new InvalidTarget({ message: "The target hostname does not resolve to a public address." });
@@ -60,42 +53,20 @@ export interface PublicHostResolver {
 }
 
 export const cloudflarePublicHostResolver = (
-  request: typeof fetch = fetch,
+  resolve: ResolveHost = (hostname) => dns.resolveAny(hostname),
 ): PublicHostResolver => ({
   assertPublic: (hostname) =>
     Effect.gen(function* () {
       const name = yield* Schema.decodeUnknownEffect(NonBlankString)(hostname).pipe(
         Effect.mapError(denied),
       );
-      const responses = yield* Effect.forEach(
-        DNS_RECORD_TYPES,
-        (recordType) =>
-          Effect.tryPromise({
-            catch: denied,
-            try: (signal) => {
-              const url = new URL(DNS_ENDPOINT);
-              url.searchParams.set("name", name);
-              url.searchParams.set("type", recordType);
-              return request(url, {
-                headers: { accept: "application/dns-json" },
-                redirect: "error",
-                signal,
-              });
-            },
-          }).pipe(
-            Effect.flatMap((response) => (response.ok ? Effect.succeed(response) : denied())),
-            Effect.flatMap((response) =>
-              Effect.tryPromise({ catch: denied, try: () => response.json() }),
-            ),
-            Effect.flatMap((input) =>
-              Schema.decodeUnknownEffect(DnsResponse)(input).pipe(Effect.mapError(denied)),
-            ),
-          ),
-        { concurrency: "unbounded" },
+      const records = yield* Effect.tryPromise({ catch: denied, try: () => resolve(name) }).pipe(
+        Effect.flatMap((input) =>
+          Schema.decodeUnknownEffect(Schema.Array(DnsRecord))(input).pipe(Effect.mapError(denied)),
+        ),
       );
-      if (responses.some(({ Status }) => Status !== 0)) return yield* denied();
-      const addresses = responses.flatMap(({ Answer = [] }) =>
-        Answer.filter(({ type }) => type === 1 || type === 28).map(({ data }) => data),
+      const addresses = records.flatMap(({ address, type }) =>
+        address !== undefined && (type === "A" || type === "AAAA") ? [address] : [],
       );
       if (addresses.length === 0 || addresses.some((address) => !isPublicAddress(address))) {
         return yield* denied();

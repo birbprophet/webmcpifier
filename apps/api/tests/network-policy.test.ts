@@ -24,30 +24,24 @@ it("classifies public addresses without admitting private or reserved ranges", (
   ).toBe(false);
 });
 
-const dnsFetch = (addresses: Readonly<Record<string, string>>) => (input: URL | RequestInfo) => {
-  const url = new URL(
-    typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
+const dnsResolve = (addresses: ReadonlyArray<string>) => () =>
+  Promise.resolve(
+    addresses.map((address) => ({
+      address,
+      type: address.includes(":") ? "AAAA" : "A",
+    })),
   );
-  const type = url.searchParams.get("type") ?? "";
-  const data = addresses[type];
-  return Promise.resolve(
-    Response.json({
-      Answer: data === undefined ? [] : [{ data, type: type === "A" ? 1 : 28 }],
-      Status: 0,
-    }),
-  );
-};
 
 it.effect("rejects a hostname when any public DNS answer targets a private network", () =>
   Effect.gen(function* () {
     const publicResult = yield* Effect.exit(
-      cloudflarePublicHostResolver(
-        dnsFetch({ A: "104.16.1.1", AAAA: "2606:4700:4700::1111" }) as typeof fetch,
-      ).assertPublic("example.com"),
+      cloudflarePublicHostResolver(dnsResolve(["104.16.1.1", "2606:4700:4700::1111"])).assertPublic(
+        "example.com",
+      ),
     );
     const privateResult = yield* Effect.exit(
       cloudflarePublicHostResolver(
-        dnsFetch({ A: "169.254.169.254", AAAA: "2606:4700:4700::1111" }) as typeof fetch,
+        dnsResolve(["169.254.169.254", "2606:4700:4700::1111"]),
       ).assertPublic("rebound.example"),
     );
     expect(publicResult._tag).toBe("Success");
