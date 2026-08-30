@@ -6,7 +6,7 @@ import {
 } from "@webmcpifier/domain";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import type { CapabilityProof } from "./proof-durable-object.ts";
+import type { CapabilityProofNamespace } from "./proof-durable-object.ts";
 import { InvalidEnvironment } from "./errors.ts";
 
 export interface BrowserSnapshotBinding {
@@ -24,8 +24,8 @@ const BrowserBindingSchema = Schema.declare<BrowserSnapshotBinding>(
   { identifier: "webmcpifier/BrowserSnapshotBinding" },
 );
 
-const ProofNamespaceSchema = Schema.declare<DurableObjectNamespace<CapabilityProof>>(
-  (value): value is DurableObjectNamespace<CapabilityProof> => hasMethod(value, "getByName"),
+const ProofNamespaceSchema = Schema.declare<CapabilityProofNamespace>(
+  (value): value is CapabilityProofNamespace => hasMethod(value, "getByName"),
   { identifier: "webmcpifier/ProofNamespace" },
 );
 
@@ -37,21 +37,6 @@ export const ApiInitialization = Schema.Struct({
   WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: NonBlankString,
 });
 export type ApiInitialization = typeof ApiInitialization.Type;
-
-export const NativeBindings = Schema.Struct({
-  BROWSER: BrowserBindingSchema,
-  PROOF: ProofNamespaceSchema,
-});
-export type NativeBindings = typeof NativeBindings.Type;
-
-export const decodeNativeBindings = (
-  input: unknown,
-): Effect.Effect<NativeBindings, InvalidEnvironment> =>
-  Schema.decodeUnknownEffect(NativeBindings)(input).pipe(
-    Effect.mapError(
-      () => new InvalidEnvironment({ message: "The Worker bindings are incomplete or invalid." }),
-    ),
-  );
 
 export const ApiEnvironment = Schema.Struct({
   API_ORIGIN: AbsoluteHttpsOrigin,

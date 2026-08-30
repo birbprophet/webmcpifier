@@ -54,10 +54,13 @@ export const rpcHandlers = (environment: ApiEnvironment) => {
   const scanner = browserSiteScanner(environment.BROWSER);
   return WebMcpifierRpcs.toLayer({
     getProofSummary: (request) =>
-      Effect.tryPromise({
-        try: () => environment.PROOF.getByName(request.capabilityId).summary(request),
-        catch: () => new ProofUnavailable({ message: "The capability proof is unavailable." }),
-      }),
+      environment.PROOF.getByName(request.capabilityId)
+        .summary(request)
+        .pipe(
+          Effect.mapError(
+            () => new ProofUnavailable({ message: "The capability proof is unavailable." }),
+          ),
+        ),
     inspectSite: (request) => scanner.inspect(request),
     publishCapability: ({ draft, scan }) =>
       Effect.gen(function* () {
@@ -74,21 +77,26 @@ export const rpcHandlers = (environment: ApiEnvironment) => {
           studioOrigin: environment.STUDIO_ORIGIN,
           writeToken,
         });
-        const [readTokenHash, writeTokenHash] = yield* Effect.promise(() =>
-          Promise.all([digestToken(readToken), digestToken(writeToken)]),
-        );
-        yield* Effect.tryPromise({
-          try: () =>
-            environment.PROOF.getByName(capabilityId).initialize({
-              capabilityHash: published.capabilityHash,
-              origin: published.config.target.origin,
-              readTokenHash,
-              runtimeVersion: published.config.runtime.version,
-              writeTokenHash,
-            }),
-          catch: () =>
-            new PublicationFailed({ message: "The capability proof could not be initialized." }),
-        });
+        const [readTokenHash, writeTokenHash] = yield* Effect.all([
+          digestToken(readToken),
+          digestToken(writeToken),
+        ]).pipe(Effect.orDie);
+        yield* environment.PROOF.getByName(capabilityId)
+          .initialize({
+            capabilityHash: published.capabilityHash,
+            origin: published.config.target.origin,
+            readTokenHash,
+            runtimeVersion: published.config.runtime.version,
+            writeTokenHash,
+          })
+          .pipe(
+            Effect.mapError(
+              () =>
+                new PublicationFailed({
+                  message: "The capability proof could not be initialized.",
+                }),
+            ),
+          );
         return published;
       }),
   });

@@ -22,7 +22,7 @@ const makeHandler = (recorded: Array<unknown>) =>
       getByName: () => ({
         record: (input: unknown) => {
           recorded.push(input);
-          return Promise.resolve(true);
+          return Effect.succeed(true);
         },
       }),
     },

@@ -2,6 +2,7 @@ import {
   AbsoluteHttpsOrigin,
   LATENCY_BUCKET_UPPER_BOUNDS,
   LatencyBuckets,
+  OpaqueToken,
   PROOF_RETENTION_MILLISECONDS,
   ProofEvent,
   RUNTIME_VERSION,
@@ -48,15 +49,23 @@ export const ProofState = Schema.Struct({
 });
 export type ProofState = typeof ProofState.Type;
 
-const PROOF_RATE_LIMIT = 120;
-const PROOF_RATE_WINDOW_MILLISECONDS = 60_000;
+export const PROOF_RATE_POLICY = {
+  limit: 120,
+  windowMilliseconds: 60 * 1_000,
+} as const;
 
 const encoder = new TextEncoder();
 
-export const digestToken = async (token: string): Promise<string> => {
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-};
+export const digestToken = (input: unknown): Effect.Effect<string, Schema.SchemaError> =>
+  Effect.gen(function* () {
+    const token = yield* Schema.decodeUnknownEffect(OpaqueToken)(input);
+    const digest = yield* Effect.promise(() =>
+      crypto.subtle.digest("SHA-256", encoder.encode(token)),
+    );
+    return yield* Schema.decodeUnknownEffect(TokenHash)(
+      Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(""),
+    );
+  });
 
 const hexBytes = (hex: string): Uint8Array => {
   const bytes = new Uint8Array(hex.length / 2);
@@ -66,20 +75,25 @@ const hexBytes = (hex: string): Uint8Array => {
   return bytes;
 };
 
-export const tokenMatches = async (expectedHash: string, token: string): Promise<boolean> => {
-  const actualHash = await digestToken(token);
-  const expected = hexBytes(expectedHash);
-  const actual = hexBytes(actualHash);
-  const platformComparison = Reflect.get(crypto.subtle, "timingSafeEqual");
-  if (typeof platformComparison === "function") {
-    return Reflect.apply(platformComparison, crypto.subtle, [expected, actual]) === true;
-  }
-  let difference = expected.length ^ actual.length;
-  for (let index = 0; index < expected.length; index += 1) {
-    difference |= expected[index]! ^ actual[index % actual.length]!;
-  }
-  return difference === 0;
-};
+export const tokenMatches = (
+  expectedInput: unknown,
+  tokenInput: unknown,
+): Effect.Effect<boolean, Schema.SchemaError> =>
+  Effect.gen(function* () {
+    const expectedHash = yield* Schema.decodeUnknownEffect(TokenHash)(expectedInput);
+    const actualHash = yield* digestToken(tokenInput);
+    const expected = hexBytes(expectedHash);
+    const actual = hexBytes(actualHash);
+    const platformComparison = Reflect.get(crypto.subtle, "timingSafeEqual");
+    if (typeof platformComparison === "function") {
+      return Reflect.apply(platformComparison, crypto.subtle, [expected, actual]) === true;
+    }
+    let difference = expected.length ^ actual.length;
+    for (let index = 0; index < expected.length; index += 1) {
+      difference |= expected[index]! ^ actual[index % actual.length]!;
+    }
+    return difference === 0;
+  });
 
 const emptyLatency = (): typeof LatencyBuckets.Type => ({
   atMost100Ms: 0,
@@ -110,8 +124,8 @@ export const consumeProofRate = (
   state: ProofState,
   now: number,
 ): { readonly allowed: boolean; readonly state: ProofState } => {
-  const inCurrentWindow = now - state.rateWindowStartedAt < PROOF_RATE_WINDOW_MILLISECONDS;
-  if (inCurrentWindow && state.rateWindowCount >= PROOF_RATE_LIMIT) {
+  const inCurrentWindow = now - state.rateWindowStartedAt < PROOF_RATE_POLICY.windowMilliseconds;
+  if (inCurrentWindow && state.rateWindowCount >= PROOF_RATE_POLICY.limit) {
     return { allowed: false, state };
   }
   return {

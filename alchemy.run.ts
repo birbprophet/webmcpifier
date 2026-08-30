@@ -1,4 +1,4 @@
-import { remote, Stack, Stage } from "alchemy";
+import { Stack, Stage } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Command from "alchemy/Command";
 import * as Output from "alchemy/Output";
@@ -6,13 +6,10 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { RUNTIME_PATH } from "./packages/domain/src/index.ts";
 import { DeploymentEnvironment } from "./packages/domain/src/environment.ts";
-import type { CapabilityProof } from "./apps/api/src/proof-durable-object.ts";
 import { apiWorkerImpl } from "./apps/api/src/worker-impl.ts";
 
 const PRODUCTION_STAGE = "prod";
 const CLOUDFLARE_COMPATIBILITY_DATE = "2026-08-29";
-const PROOF_BINDING = "PROOF";
-const PROOF_CLASS = "CapabilityProof";
 
 export default Stack(
   "webmcpifier",
@@ -43,10 +40,6 @@ export default Stack(
       runtimeVerification.hash.input,
       () => deploy.WEBMCPIFIER_RUNTIME_INTEGRITY,
     );
-    const proof = Cloudflare.DurableObject<CapabilityProof>(PROOF_BINDING, {
-      className: PROOF_CLASS,
-    });
-
     const api = yield* Cloudflare.Worker(
       "Api",
       {
@@ -56,8 +49,6 @@ export default Stack(
         },
         env: {
           API_ORIGIN: deploy.WEBMCPIFIER_API_ORIGIN,
-          BROWSER: Cloudflare.Browser("BROWSER").pipe(remote()),
-          [PROOF_BINDING]: proof,
           RELEASE_COMMIT: deploy.WEBMCPIFIER_RELEASE_COMMIT,
           RUNTIME_INTEGRITY: verifiedRuntimeIntegrity,
           STUDIO_ORIGIN: deploy.WEBMCPIFIER_STUDIO_ORIGIN,

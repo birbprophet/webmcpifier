@@ -6,6 +6,7 @@ import {
   consumeProofRate,
   digestToken,
   initializeProofState,
+  PROOF_RATE_POLICY,
   proofSummary,
   tokenMatches,
   type ProofTelemetryEvent,
@@ -13,9 +14,9 @@ import {
 
 it.effect("keeps only hashed credentials and aggregate proof metadata", () =>
   Effect.gen(function* () {
-    const readTokenHash = yield* Effect.promise(() => digestToken("read-secret"));
-    const writeTokenHash = yield* Effect.promise(() => digestToken("write-secret"));
-    const capabilityHash = yield* Effect.promise(() => digestToken("capability-config"));
+    const readTokenHash = yield* digestToken("read-secret");
+    const writeTokenHash = yield* digestToken("write-secret");
+    const capabilityHash = yield* digestToken("capability-config");
     const startedAt = Date.UTC(2026, 7, 29, 12);
     let state = initializeProofState(
       {
@@ -75,16 +76,16 @@ it.effect("keeps only hashed credentials and aggregate proof metadata", () =>
       "successes",
       "writeTokenHash",
     ]);
-    expect(yield* Effect.promise(() => tokenMatches(writeTokenHash, "write-secret"))).toBe(true);
-    expect(yield* Effect.promise(() => tokenMatches(writeTokenHash, "wrong-secret"))).toBe(false);
+    expect(yield* tokenMatches(writeTokenHash, "write-secret")).toBe(true);
+    expect(yield* tokenMatches(writeTokenHash, "wrong-secret")).toBe(false);
   }),
 );
 
 it.effect("rejects proof metadata drift", () =>
   Effect.gen(function* () {
-    const readTokenHash = yield* Effect.promise(() => digestToken("read-secret"));
-    const writeTokenHash = yield* Effect.promise(() => digestToken("write-secret"));
-    const capabilityHash = yield* Effect.promise(() => digestToken("capability-config"));
+    const readTokenHash = yield* digestToken("read-secret");
+    const writeTokenHash = yield* digestToken("write-secret");
+    const capabilityHash = yield* digestToken("capability-config");
     const state = initializeProofState(
       {
         capabilityHash,
@@ -99,7 +100,7 @@ it.effect("rejects proof metadata drift", () =>
       applyProofEvent(
         state,
         {
-          capabilityHash: yield* Effect.promise(() => digestToken("different-capability-config")),
+          capabilityHash: yield* digestToken("different-capability-config"),
           capabilityId: "cap_test",
           latencyMs: 10,
           origin: "https://demo.webmcpifier.com",
@@ -116,9 +117,9 @@ it.effect("rejects proof metadata drift", () =>
 
 it.effect("rate limits proof writes per capability without storing caller identity", () =>
   Effect.gen(function* () {
-    const readTokenHash = yield* Effect.promise(() => digestToken("read-secret"));
-    const writeTokenHash = yield* Effect.promise(() => digestToken("write-secret"));
-    const capabilityHash = yield* Effect.promise(() => digestToken("capability-config"));
+    const readTokenHash = yield* digestToken("read-secret");
+    const writeTokenHash = yield* digestToken("write-secret");
+    const capabilityHash = yield* digestToken("capability-config");
     let state = initializeProofState(
       {
         capabilityHash,
@@ -129,13 +130,13 @@ it.effect("rate limits proof writes per capability without storing caller identi
       },
       0,
     );
-    for (let index = 0; index < 120; index += 1) {
+    for (let index = 0; index < PROOF_RATE_POLICY.limit; index += 1) {
       const result = consumeProofRate(state, index);
       expect(result.allowed).toBe(true);
       state = result.state;
     }
-    expect(consumeProofRate(state, 121).allowed).toBe(false);
-    expect(consumeProofRate(state, 60_000).allowed).toBe(true);
+    expect(consumeProofRate(state, PROOF_RATE_POLICY.limit + 1).allowed).toBe(false);
+    expect(consumeProofRate(state, PROOF_RATE_POLICY.windowMilliseconds).allowed).toBe(true);
     expect(JSON.stringify(state)).not.toContain("identity");
   }),
 );

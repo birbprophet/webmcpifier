@@ -13,6 +13,12 @@ import type { BrowserSnapshotBinding } from "./environment.ts";
 import { cloudflarePublicHostResolver, type PublicHostResolver } from "./network-policy.ts";
 import { extractSemanticForms } from "./semantic-forms.ts";
 
+// Browser Run can wait far longer by default. A scan is an interactive,
+// untrusted fetch, so WebMCPifier gives it a short, explicit execution budget
+// and disables cached snapshots before compiling a structural fingerprint.
+const SCAN_ACTION_TIMEOUT_MILLISECONDS = 15_000;
+const SCAN_CACHE_TTL_SECONDS = 0;
+
 const BrowserSnapshot = Schema.Struct({
   meta: Schema.Struct({
     finalUrl: Schema.optional(Schema.String),
@@ -60,16 +66,14 @@ export const browserSiteScanner = (
       const response = yield* Effect.tryPromise({
         try: () =>
           browser.quickAction("snapshot", {
-            actionTimeout: 15_000,
-            cacheTTL: 0,
+            actionTimeout: SCAN_ACTION_TIMEOUT_MILLISECONDS,
+            cacheTTL: SCAN_CACHE_TTL_SECONDS,
             formats: ["content", "screenshot"],
             screenshotOptions: {
               fullPage: false,
-              quality: 70,
               type: "jpeg",
             },
             url: requestedUrl,
-            viewport: { height: 720, width: 1280 },
           }),
         catch: scanFailure,
       });

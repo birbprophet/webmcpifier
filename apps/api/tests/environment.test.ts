@@ -1,10 +1,10 @@
 import { expect, it } from "@effect/vitest";
-import * as Cloudflare from "alchemy/Cloudflare";
+import { RuntimeContext } from "alchemy/RuntimeContext";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import { ApiInitialization, decodeApiEnvironment } from "../src/environment.ts";
-import { apiWorkerImpl } from "../src/worker-impl.ts";
+import { makeApiWorker } from "../src/worker-impl.ts";
 
 type WorkerEntry = typeof import("../src/worker.ts");
 type Assert<T extends true> = T;
@@ -16,7 +16,7 @@ const validBindings = {
   API_ORIGIN: "https://api.webmcpifier.com",
   RELEASE_COMMIT: "0123456789abcdef0123456789abcdef01234567",
   RUNTIME_INTEGRITY: "sha384-dGVzdA==",
-  STUDIO_ORIGIN: "https://webmcpifier.com",
+  STUDIO_ORIGIN: "https://www.webmcpifier.com",
   WEBMCP_THIRD_PARTY_ORIGIN_TRIAL_TOKEN: "third-party-token",
 };
 
@@ -29,8 +29,6 @@ it("retains the default export required by Alchemy's Worker bridge", () => {
 it.effect("requires and Schema-decodes every API string binding at initialization", () =>
   Effect.gen(function* () {
     expect(yield* load(validBindings)).toEqual(validBindings);
-    const worker = yield* apiWorkerImpl(validBindings);
-    expect(Effect.isEffect(worker.fetch)).toBe(true);
     const missing = yield* Effect.exit(load({ ...validBindings, RELEASE_COMMIT: undefined }));
     expect(missing._tag).toBe("Failure");
   }),
@@ -64,14 +62,17 @@ it.effect("requires both native Worker bindings", () =>
   }),
 );
 
-it.effect("runs the Alchemy HttpEffect through request-scoped native bindings", () =>
+it.effect("runs the direct Alchemy HttpEffect with its decoded environment", () =>
   Effect.gen(function* () {
-    const worker = yield* apiWorkerImpl(validBindings);
-    const response = yield* worker.fetch.pipe(
-      Effect.provideService(Cloudflare.Workers.WorkerEnvironment, {
+    const worker = makeApiWorker(
+      yield* decodeApiEnvironment({
+        ...validBindings,
         BROWSER: { quickAction: () => Promise.resolve(new Response()) },
         PROOF: { getByName: () => ({}) },
       }),
+    );
+    const response = yield* worker.fetch.pipe(
+      Effect.provide(RuntimeContext.phantom),
       Effect.provideService(
         HttpServerRequest.HttpServerRequest,
         HttpServerRequest.fromWeb(
