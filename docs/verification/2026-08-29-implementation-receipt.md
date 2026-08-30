@@ -31,7 +31,7 @@ This receipt separates design intent from executed evidence. A checked item need
 | Public fill-for-review call     | Passed  | Result was `ready_for_review`, `submissionRequired: true`, `updatedFieldCount: 7`; review opened and closed without submission                               |
 | Aggregate proof                 | Passed  | Capability `cap_c04b73f132964dc6b89dd18b525f36f7`: one invocation, one success, zero failures/aborts, ≤100 ms                                                |
 | Contract identity               | Passed  | Hash `0f4f6e2bc11bac980c2c5b7813bb052d3e241f1e08af63dd67b19e3a6e600f6e`, runtime `1.0.0`, exact demo origin                                                  |
-| Public GitHub repository        | Blocked | The intended public repository exists but is empty; the local GitHub CLI token is invalid and SSH authentication is unavailable                              |
+| Public GitHub repository        | Passed  | `birbprophet/webmcpifier` is public, defaults to `main`, and GitHub reports the MIT license                                                                  |
 | Real Chrome origin-trial tokens | Pending | Codex in-app Browser proof passed; registered first-party and third-party Chrome tokens still require the release owner                                      |
 
 The email value is intentionally redacted by the in-app browser's DOM inspection surface. The runtime returned seven updates, the email control reported native validity with no missing/type mismatch, and the page's human review gate opened, which requires the complete form to pass `reportValidity()`. The browser then closed review and observed no `data-human-submitted` marker.

@@ -2,12 +2,12 @@
 
 ## Public release
 
-- [ ] Public MIT repository is `https://github.com/birbprophet/webmcpifier`.
+- [x] Public MIT repository is `https://github.com/birbprophet/webmcpifier`.
 - [ ] Repository default branch and production deployment are frozen on the declared release commit.
 - [x] `https://www.webmcpifier.com`, `https://demo.webmcpifier.com`, and `https://api.webmcpifier.com` pass live route checks.
 - [x] `https://webmcpifier.com` permanently redirects to the canonical `www` origin.
 - [ ] First-party and third-party WebMCP origin-trial registrations are active on the intended origins.
-- [x] README testing prompts, browser requirements, architecture, safety boundary, differentiation, release evidence, and MIT license are present locally.
+- [x] README testing prompts, browser requirements, architecture, safety boundary, differentiation, release evidence, and MIT license are public.
 
 ## Real journey evidence
 
