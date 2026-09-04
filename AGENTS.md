@@ -1,3 +1,18 @@
+<!-- BEGIN CODEX-ONLY BROWSER ROUTING -->
+
+## Codex-only browser routing
+
+When this repository is opened in OpenAI Codex, Codex must never load, invoke, or run the
+`ego-browser` skill or `ego-browser` command. Use Codex's native in-app Browser for user-directed
+website navigation and inspection. Browser QA and verification remain remote-only and must run in
+an ephemeral Fly Machine with `PRODUCT_MODE=fly`; the in-app Browser is not QA evidence. If the
+native Browser is unavailable or lacks required authentication, stop and ask the user instead of
+falling back to Ego Browser, Google Chrome, or another local browser.
+
+This section applies only to OpenAI Codex and does not change browser routing for other agents.
+
+<!-- END CODEX-ONLY BROWSER ROUTING -->
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
