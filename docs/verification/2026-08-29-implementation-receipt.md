@@ -4,9 +4,21 @@ Date: 2026-08-29
 
 This receipt separates design intent from executed evidence. A checked item needs a concrete command, route, or browser artifact; source presence alone is not proof.
 
-## 2026-08-30 Untitled UI polish release
+## 2026-09-03 pre-film clean-state release
 
-The current installed application release is `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`. It is pushed to `origin/main`, Alchemy reported that exact SHA, and the API returns it in `x-webmcpifier-release`.
+The current application release is `21473342fd4a9eb5af00b06b71d728db3e7c27a9`. It is pushed to `origin/main`, Alchemy reported that exact SHA, and the API returns it in `x-webmcpifier-release`.
+
+- Pull request [#2](https://github.com/birbprophet/webmcpifier/pull/2) removed the generated capability tag as the only demo-source behavior change, replaced the installed-state assertion with a clean-state regression, and added Codex-only browser-routing instructions. Its required `ready` check passed before squash merge.
+- The final `vp run ready` passed 93 formatting checks, lint and type checking across 58 source files, 18 test files with 75 tests, and every workspace build. The first concurrent run hit the existing semantic-form property test's five-second timeout; that suite passed alone and the complete gate then passed on a clean rerun.
+- Alchemy completed eight production updates/no-ops and reported the exact release SHA above.
+- An ephemeral Fly Firecracker machine with `PRODUCT_MODE=fly` fetched all three public surfaces. It proved that the demo HTML has no generated `data-webmcpifier` config tag or WebMCPifier runtime source, retains the stable quote form and representative controls, that the API reports the exact release, and that the Studio is reachable. The machine emitted `WEBMCPIFIER_QA_PASS_21473342` and auto-destroyed; the subsequent machine inventory was empty.
+- Therefore the previously installed `prepare_service_quote` capability is not present in the current public demo source. The historical installed journey and receipt below remain evidence of the completed post-install state, not claims about the current pre-film state.
+
+No new capability was approved or invoked, and no receipt token, write token, form value, or contact data was used during this reset.
+
+## Historical 2026-08-30 Untitled UI polish release
+
+The installed application release was `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`. It was pushed to `origin/main`, Alchemy reported that exact SHA, and the API returned it in `x-webmcpifier-release`.
 
 - The receipt no longer uses the marketing metric renderer that supplied an unconditional `100%` trend. It renders truthful absolute totals, a bounded latency distribution, and purpose-specific runtime metadata.
 - Proof substates are explicit: Refreshing, Unavailable, No events, and Live. Long installation artifacts have real expansion controls, and invalid contract fields receive linked guidance plus focus on the first failure.
@@ -62,7 +74,7 @@ At that point, the release owner's approval click, newly generated tag, installe
 | Origin-trial release-input validation                 | Yes       | Yes            | Yes   | No       | Placeholder, malformed, expired, and incorrectly scoped tokens block deployment    |
 | Exact authoring inputs and shared form-contract match | Yes       | Yes            | Yes   | Yes      | Live authoring schema and installed runtime schema matched the approved contract   |
 
-## Evidence ledger
+## Historical installed evidence ledger
 
 | Evidence                        | Result  | Artifact                                                                                                                                                        |
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |

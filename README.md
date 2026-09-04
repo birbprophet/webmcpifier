@@ -13,28 +13,34 @@ V1 supports one well-labelled semantic form on one public page. It fills that fo
 - Effect RPC and proof API: [api.webmcpifier.com](https://api.webmcpifier.com)
 - Source: [github.com/birbprophet/webmcpifier](https://github.com/birbprophet/webmcpifier)
 
-The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed installed application release is `f9706f3b84fca0c4e5972e2c6a7a44de5a96e48e`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
+The apex [webmcpifier.com](https://webmcpifier.com) permanently redirects to the canonical `www` origin. The deployed clean pre-install application release is `21473342fd4a9eb5af00b06b71d728db3e7c27a9`. See the dated [implementation receipt](docs/verification/2026-08-29-implementation-receipt.md) for the verification state; a URL in this list is not, by itself, evidence that a journey passed.
 
-The public demo is currently in its installed verification state. Its approved config-bearing tag exposes exactly one `prepare_service_quote` tool that fills the seven-field Northstar form for review and cannot submit it.
+The public demo is currently in its clean pre-install filming state. It contains the ordinary seven-field Northstar form, but no generated WebMCPifier tag and no installed `prepare_service_quote` tool. The earlier installed release remains documented as historical verification evidence.
 
-## Current installed smoke test
+## Current pre-install smoke test
 
 Use ChatGPT's in-app browser or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled.
 
-1. Open the customer demo and ask: `What WebMCP tools does this page expose?` Confirm that exactly `prepare_service_quote` is available with a closed seven-field schema.
-2. Ask:
+1. Open the customer demo and ask: `What WebMCP tools does this page expose? Do not interact with the form.`
+2. Confirm that `prepare_service_quote` is not available and that the Northstar form is still empty and usable as an ordinary human form.
+3. Continue with the narrated build flow below. After installing the newly generated tag, ask:
 
    > Prepare a plumbing service quote for Alex Chen at alex@example.test. It is urgent, for a house, postcode TEST 1AA, and the details are: Demonstration leak under the kitchen sink. Do not submit it.
 
-3. Confirm that all seven values are prepared, focus is on **Review request**, the URL is unchanged, the review dialog is still closed, and no submission confirmation exists.
-4. Open the private receipt created during the approval flow and confirm that the invocation and success totals increased together, with no failure or abort.
+4. Confirm that all seven values are prepared, focus is on **Review request**, the URL is unchanged, the review dialog is still closed, and no submission confirmation exists.
+5. Open the private receipt created during the approval flow and confirm that the invocation and success totals increased together, with no failure or abort.
 
 ## Narrated build flow
 
 The submission capture starts from the same demo without its generated tag, then records this complete transition:
 
 1. Show that the customer page exposes no WebMCP tools.
-2. Run the authoring prompt above and show the Studio's rendered inspection, semantic inventory, contract, and safety boundary.
+2. Ask your browser agent:
+
+   > Visit https://www.webmcpifier.com and use its WebMCP tools to inspect https://demo.webmcpifier.com. Draft a tool named prepare_service_quote that fills the service quote for review and never submits it. Stop when human approval is required.
+
+   Show the Studio's rendered inspection, semantic inventory, contract, and safety boundary.
+
 3. Press **Approve capability** yourself. The browser agent cannot cross this gate.
 4. Ask: `Give me the installation skill for the approved capability.`
 5. Add only the returned tag to the demo HTML shell and deploy through the repository's existing Alchemy command.
@@ -153,7 +159,7 @@ Deployment rejects placeholders, malformed token envelopes, expired tokens, and 
 
 The third-party token is embedded inside each generated capability config and therefore inside its contract hash. Replacing a release token requires a newly approved publication and a newly generated demo tag; do not retain or hand-edit an older tag. The final capture uses two Alchemy deployments: first the real-token release with the demo tag absent, then the exact human-approved tag installed in the demo source.
 
-The deployed release has been browser-verified with the Codex in-app browser's WebMCP support: the Studio's authoring tools and the demo's installed third-party runtime both registered and executed. Generic Chrome verification still requires the registered WebMCP origin trial or Chrome's WebMCP testing flag and remains a separate release-owner check.
+The historical installed release was browser-verified with the Codex in-app browser's WebMCP support: the Studio's authoring tools and the demo's third-party runtime both registered and executed. The current clean pre-install release was remotely verified from an ephemeral Fly Machine to contain no generated runtime tag while preserving the semantic form. Generic Chrome verification still requires the registered WebMCP origin trial or Chrome's WebMCP testing flag and remains a separate release-owner check.
 
 ## Scope
 
